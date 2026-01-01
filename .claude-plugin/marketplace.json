@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "claude-code-config",
+  "version": "0.1.0",
+  "description": "Personal repository for managing Claude Code settings, plugins, and development customizations.",
+  "owner": {
+    "name": "danishi"
+  },
+  "plugins": [
+    {
+      "name": "pdf-editor",
+      "description": "PDF page manipulation toolkit for deleting, reordering, inserting, rotating, splitting, and merging PDF pages and files.",
+      "source": "./plugins/pdf-editor",
+      "category": "productivity"
+    }
+  ]
+}

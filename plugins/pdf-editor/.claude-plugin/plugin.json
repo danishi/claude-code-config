@@ -1,0 +1,8 @@
+{
+  "name": "pdf-editor",
+  "description": "PDF page manipulation toolkit for deleting, reordering, inserting, rotating, splitting, and merging PDF pages and files.",
+  "version": "1.0.0",
+  "author": {
+    "name": "danishi"
+  }
+}
