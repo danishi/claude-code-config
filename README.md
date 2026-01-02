@@ -3,6 +3,25 @@
 
 Personal repository for managing Claude Code settings, plugins, and development customizations.
 
+## Features
+
+This repository provides two custom plugins for Claude Code:
+
+### danishi Plugin
+Personal base toolkit with the following features:
+- **Slash Command**: `/review-spec-doc` - Reviews system specification documents and outputs improvement suggestions in Markdown format
+- **Hooks**: macOS notification integration (alerts when Claude requests permission and when tasks complete)
+- **MCP Servers**: Pre-configured integration with context7, chrome-devtools, and aws-knowledge
+
+### pdf-editor Plugin
+PDF page manipulation toolkit supporting:
+- Deleting pages
+- Reordering pages
+- Inserting pages from other PDFs
+- Rotating pages (90/180/270 degrees)
+- Splitting PDFs into multiple files
+- Merging multiple PDFs into one
+
 ## Installation
 ### Adding the Marketplace
 
@@ -24,12 +43,17 @@ claude marketplace add https://github.com/danishi/claude-code-config
 
 ### Installing Plugins
 
+List available plugins:
 ```bash
-claude plugin install [plugin]
+claude plugin list
 ```
 
-ex: Installing PDF Editor plugin.
-
+Install a specific plugin:
 ```bash
+claude plugin install danishi
 claude plugin install pdf-editor
 ```
+
+### License
+
+This is a personal configuration repository. Feel free to reference or fork for your own use.
