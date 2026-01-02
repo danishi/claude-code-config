@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "context7": {
+      "type": "http",
+      "url": "https://context7.liam.sh/mcp"
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ],
+      "env": {}
+    },
+    "aws-knowledge": {
+      "type": "http",
+      "url": "https://knowledge-mcp.global.api.aws"
+    }
+  }
+}
