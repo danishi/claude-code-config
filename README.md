@@ -1,4 +1,6 @@
 # claude-code-config
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/danishi/claude-code-config)
+
 Personal repository for managing Claude Code settings, plugins, and development customizations.
 
 ## Installation
