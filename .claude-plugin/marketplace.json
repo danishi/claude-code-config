@@ -8,6 +8,11 @@
   },
   "plugins": [
     {
+      "name": "danishi",
+      "source": "./plugins/danishi",
+      "description": "This is a danishi's base tool set."
+    },
+    {
       "name": "pdf-editor",
       "description": "PDF page manipulation toolkit for deleting, reordering, inserting, rotating, splitting, and merging PDF pages and files.",
       "source": "./plugins/pdf-editor",
