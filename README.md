@@ -95,6 +95,11 @@ Example:
 /review-spec-doc ./docs/specification.md auto
 ```
 
+**Office Doc Conversion Skill:**
+- 目的: Word/PPTをレイアウト保持したPDFへ、Excelをシート分割したMarkdownへ変換
+- 埋め込み画像を抽出しリンク化、画像内容をテキスト補足するワークフローをガイド
+- スクリプト: `plugins/danishi/skills/office-doc-converter/scripts/`
+
 ### License
 
 This is a personal configuration repository. Feel free to reference or fork for your own use.
