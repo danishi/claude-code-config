@@ -1,2 +1,3 @@
-# 基本方針
-- 必ず日本語で応対する
+# CLAUDE.md
+## Principles of Action
+- **Completely align with users:** For any ambiguity, we must break it down into smaller parts and conduct interviews using the AskUserQuestion Tool.
