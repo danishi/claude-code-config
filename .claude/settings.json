@@ -36,7 +36,7 @@
         "hooks": [
             {
             "type": "command",
-            "command": "osascript -e 'display notification \"Claude Code is requesting permission\" with title \"Claude Code\" subtitle \"Awaiting confirmation\" sound name \"Glass\"'"
+            "command": "afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display notification \"Claude Code is requesting permission\" with title \"Claude Code\" subtitle \"Awaiting confirmation\"'"
             }
         ]
         }
@@ -47,7 +47,7 @@
         "hooks": [
             {
             "type": "command",
-            "command": "osascript -e 'display notification \"Task completed\" with title \"Claude Code\" subtitle \"Process finished\" sound name \"Hero\"'"
+            "command": "afplay /System/Library/Sounds/Hero.aiff & osascript -e 'display notification \"Task completed\" with title \"Claude Code\" subtitle \"Process finished\"'"
             }
         ]
         }
