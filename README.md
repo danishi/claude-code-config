@@ -95,6 +95,9 @@ Example:
 /review-spec-doc ./docs/specification.md auto
 ```
 
+### Others
+- https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills
+
 ### License
 
 This is a personal configuration repository. Feel free to reference or fork for your own use.
