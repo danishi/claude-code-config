@@ -2,6 +2,11 @@
 
 ## Principles of Action
 - **Completely align with users:** For any ambiguity, we must break it down into smaller parts and conduct interviews using the AskUserQuestion Tool.
+- **MCP/Skills First (mandatory):** Before using WebSearch/WebFetch for any technical research or documentation lookup, you MUST:
+  1. Run `ToolSearch` with relevant keywords (e.g., service name, product name, library name) to check for specialized MCP tools
+  2. Use the matching MCP tool if found
+  3. Fall back to WebSearch/WebFetch only when MCP tools return insufficient results
+  - Similarly, prefer matching Skills over generic approaches when available
 
 ## Language
 - **Always respond in Japanese** when interacting with the user.
