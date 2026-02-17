@@ -5,9 +5,14 @@
       "Edit",
       "Read",
       "Write",
+      "LS",
+      "Glob",
+      "Grep",
+      "NotebookEdit",
       "Bash(*)",
       "WebSearch",
       "WebFetch(domain:*)",
+      "Skill(*)",
       "mcp__AWS_Knowledge_MCP_Server__*",
       "mcp__google-developer-knowledge__*",
       "mcp__chrome-devtools__*",
@@ -15,8 +20,39 @@
     ],
     "deny": [
       "Bash(sudo *)",
+      "Bash(su *)",
+      "Bash(chmod 777 *)",
+      "Bash(chmod +s *)",
+      "Bash(chown root *)",
       "Read(.env*)",
-      "Write(.env*)"
+      "Write(.env*)",
+      "Edit(.env*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Write(**/*.pem)",
+      "Write(**/*.key)",
+      "Read(**/*credential*)",
+      "Write(**/*credential*)",
+      "Read(~/.ssh/*)",
+      "Read(~/.aws/credentials)",
+      "Read(~/.config/gcloud/*)",
+      "Read(~/.databrickscfg)",
+      "Bash(rm -rf /)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf ~/*)",
+      "Bash(mkfs*)",
+      "Bash(dd if=*)",
+      "Bash(curl * | bash)",
+      "Bash(curl * | sh)",
+      "Bash(wget * | bash)",
+      "Bash(wget * | sh)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Write(/etc/*)",
+      "Write(/usr/*)",
+      "Write(/sys/*)",
+      "Write(/proc/*)"
     ],
     "defaultMode": "acceptEdits"
   },
@@ -48,13 +84,6 @@
       }
     ]
   },
-  "enabledMcpjsonServers": [
-    "aws-knowledge",
-    "chrome-devtools",
-    "google-developer-knowledge",
-    "context7"
-  ],
-  "enableAllProjectMcpServers": true,
   "enabledPlugins": {
     "example-skills@anthropic-agent-skills": true,
     "posthog@claude-plugins-official": true,
@@ -64,7 +93,16 @@
   "language": "Japanese",
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "enabledMcpjsonServers": [
+    "aws-knowledge",
+    "chrome-devtools",
+    "google-developer-knowledge",
+    "context7"
+  ],
+  "enableAllProjectMcpServers": true,
   "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "ENABLE_TOOL_SEARCH": "1",
+    "CLAUDE_CODE_MAX_AGENT_TURNS": "10"
   }
 }
