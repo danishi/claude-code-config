@@ -86,7 +86,6 @@
   },
   "enabledPlugins": {
     "example-skills@anthropic-agent-skills": true,
-    "posthog@claude-plugins-official": true,
     "document-skills@anthropic-agent-skills": true,
     "danishi@claude-code-config": true
   },
