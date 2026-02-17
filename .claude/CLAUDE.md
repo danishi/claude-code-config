@@ -8,9 +8,14 @@
   2. Use the matching MCP tool if found
   3. Fall back to WebSearch/WebFetch only when MCP tools return insufficient results
   - Similarly, prefer matching Skills over generic approaches when available
+- MUST use subagents for complex problem verification
+- Optimize tool usage with parallel calling for maximum efficiency
+
+## Context Management
+- MUST update and maintain CLAUDE.md files for persistent project context
 
 ## Language
-- **Always respond in Japanese** when interacting with the user.
+- Always Think in English, but **respond in Japanese**.
 
 ## Quality Standards
 ### Commit Messages
