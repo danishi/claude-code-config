@@ -13,7 +13,7 @@
       "WebSearch",
       "WebFetch(domain:*)",
       "Skill(*)",
-      "mcp__AWS_Knowledge_MCP_Server__*",
+      "mcp__aws-knowledge__aws___*",
       "mcp__google-developer-knowledge__*",
       "mcp__chrome-devtools__*",
       "mcp__context7__*"
