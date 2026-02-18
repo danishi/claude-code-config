@@ -96,7 +96,8 @@
     "aws-knowledge",
     "chrome-devtools",
     "google-developer-knowledge",
-    "context7"
+    "context7",
+    "drawio"
   ],
   "enableAllProjectMcpServers": true,
   "env": {

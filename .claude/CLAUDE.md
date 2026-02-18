@@ -22,3 +22,6 @@
 - Write in English.
 - Use imperative mood: "Add feature" not "Added feature".
 - Keep the first line under 72 characters.
+
+### DrawIO
+- When creating or editing `.drawio` files, use only DrawIO's built-in official icon sets (shape libraries). Do not embed external image URLs or custom images.

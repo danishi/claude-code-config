@@ -26,6 +26,10 @@
       "headers": {
         "CONTEXT7_API_KEY": "YOUR_API_KEY"
       }
+    },
+    "drawio": {
+      "command": "npx",
+      "args": ["@drawio/mcp"]
     }
   }
 }
