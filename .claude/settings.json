@@ -16,7 +16,8 @@
       "mcp__aws-knowledge__aws___*",
       "mcp__google-developer-knowledge__*",
       "mcp__chrome-devtools__*",
-      "mcp__context7__*"
+      "mcp__context7__*",
+      "mcp__drawio__*"
     ],
     "deny": [
       "Bash(sudo *)",
