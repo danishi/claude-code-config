@@ -17,7 +17,8 @@
       "mcp__google-developer-knowledge__*",
       "mcp__chrome-devtools__*",
       "mcp__context7__*",
-      "mcp__drawio__*"
+      "mcp__drawio__*",
+      "mcp__backlog__*"
     ],
     "deny": [
       "Bash(sudo *)",
@@ -98,7 +99,8 @@
     "chrome-devtools",
     "google-developer-knowledge",
     "context7",
-    "drawio"
+    "drawio",
+    "backlog"
   ],
   "enableAllProjectMcpServers": true,
   "env": {
