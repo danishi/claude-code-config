@@ -1,30 +1,94 @@
 # claude-code-config
+
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/danishi/claude-code-config)
 
 Personal repository for managing Claude Code settings, plugins, and development customizations.
 
-## Features
+## Repository Structure
 
-This repository provides two custom plugins for Claude Code:
+```
+.
+├── .claude/                    # Claude Code project settings
+│   ├── CLAUDE.md              # Project guidelines & principles
+│   └── settings.json          # Permissions, hooks, MCP servers
+├── .claude-plugin/
+│   └── marketplace.json       # Plugin marketplace definition
+├── .github/workflows/         # GitHub Actions
+│   ├── claude.yml             # @claude mention handler
+│   └── claude-code-review.yml # Automated PR review
+├── .mcp.json                  # MCP server configurations
+├── plugins/
+│   ├── danishi/               # Base toolkit plugin
+│   └── pdf-editor/            # PDF manipulation plugin
+└── skills/
+    └── nanobanana/            # AI image generation skill
+```
+
+## Plugins & Skills
+
+This repository provides three plugins via the Claude Code marketplace:
 
 ### danishi Plugin
+
 Personal base toolkit with the following features:
-- **Slash Command**: `/review-spec-doc` - Reviews system specification documents and outputs improvement suggestions in Markdown format
-- **Hooks**: macOS notification integration (alerts when Claude requests permission and when tasks complete)
-- **MCP Servers**: Pre-configured integration with context7, chrome-devtools, and aws-knowledge
+
+| Feature | Description |
+|---------|-------------|
+| `/review-spec-doc` | Reviews system specification documents and outputs improvement suggestions in Markdown |
+| Hooks | macOS notification integration (alerts on permission requests and task completion) |
+| MCP Servers | Pre-configured integration with chrome-devtools and aws-knowledge |
 
 ### pdf-editor Plugin
-PDF page manipulation toolkit supporting:
-- Deleting pages
-- Reordering pages
-- Inserting pages from other PDFs
-- Rotating pages (90/180/270 degrees)
-- Splitting PDFs into multiple files
-- Merging multiple PDFs into one
 
-**Specialized Agent**: `pdf-operator` - Dedicated agent for efficient PDF operations with automatic script selection and execution
+PDF page manipulation toolkit with a specialized `pdf-operator` agent:
+
+- **Delete** - Remove specific pages or page ranges
+- **Reorder** - Rearrange page order
+- **Insert** - Insert pages from another PDF
+- **Rotate** - Rotate pages (90/180/270 degrees)
+- **Split** - Split into multiple files (per-page, ranges, or chunks)
+- **Merge** - Combine multiple PDFs into one
+
+### nanobanana Skill
+
+AI image generation using Google Gemini 3 Pro Image (Nano Banana Pro):
+
+- **Text-to-Image** - Generate images from text prompts
+- **Image Editing** - Transform existing images with natural language instructions
+- **Aspect Ratios** - 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9
+- **High Resolution** - Standard, 2K, and 4K output
+- **Batch Generation** - Generate multiple images with parallel execution support
+- **Prompt Reference** - Built-in prompt templates and best practices
+
+## MCP Servers
+
+Pre-configured MCP (Model Context Protocol) servers:
+
+| Server | Description |
+|--------|-------------|
+| [chrome-devtools](https://www.npmjs.com/package/chrome-devtools-mcp) | Browser automation, screenshots, and DevTools interaction |
+| [aws-knowledge](https://awslabs.github.io/mcp/) | AWS documentation search, regional availability, and API reference |
+| [google-developer-knowledge](https://developers.google.com/) | Google APIs documentation |
+| [context7](https://context7.com/) | Up-to-date library documentation lookup |
+| [drawio](https://www.npmjs.com/package/@drawio/mcp) | Diagram creation and editing (draw.io) |
+| [backlog](https://www.npmjs.com/package/backlog-mcp-server) | Backlog project management integration |
+
+## GitHub Actions
+
+### `@claude` Mention Handler (`claude.yml`)
+
+Triggers Claude Code when `@claude` is mentioned in:
+- Issue comments
+- PR review comments
+- PR reviews
+- New issues
+
+### Automated PR Review (`claude-code-review.yml`)
+
+Automatically runs code review on every pull request using the official `code-review` plugin.
 
 ## Installation
+
 ### Adding the Marketplace
 
 Add to your Claude Code settings file (`~/.config/claude/settings.json`):
@@ -54,9 +118,22 @@ Install a specific plugin:
 ```bash
 claude plugin install danishi
 claude plugin install pdf-editor
+claude plugin install nanobanana
 ```
 
 ## Usage
+
+### danishi Plugin
+
+**Document Review Command:**
+```bash
+/review-spec-doc <input-file-path> <output-file-path|auto>
+```
+
+Example:
+```bash
+/review-spec-doc ./docs/specification.md auto
+```
 
 ### pdf-editor Plugin
 
@@ -78,26 +155,51 @@ You can also use Claude Code's natural language interface to perform PDF operati
 "Split document.pdf into individual pages"
 ```
 
-**Requirements for pdf-editor:**
+**Requirements:**
 ```bash
 pip install pypdf
 ```
 
-### danishi Plugin
+### nanobanana Skill
 
-**Document Review Command:**
+**Prerequisites:**
 ```bash
-/review-spec-doc <input-file-path> <output-file-path|auto>
+pip install google-genai pillow
+export GEMINI_API_KEY="your-api-key"  # Get from https://aistudio.google.com/apikey
 ```
 
-Example:
+**Generate an image:**
 ```bash
-/review-spec-doc ./docs/specification.md auto
+python3 <skill_dir>/scripts/generate.py "a cute robot mascot, pixel art style" -o robot.png
 ```
 
-### Others
-- https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills
+**Edit an existing image:**
+```bash
+python3 <skill_dir>/scripts/generate.py "make the background blue" -i input.jpg -o output.png
+```
 
-### License
+**Batch generation:**
+```bash
+python3 <skill_dir>/scripts/batch_generate.py "pixel art logo" -n 20 -d ./logos -p logo
+```
+
+See [skills/nanobanana/SKILL.md](skills/nanobanana/SKILL.md) for full documentation and options.
+
+## Project Settings
+
+This repository also serves as a reference for Claude Code project configuration:
+
+- **CLAUDE.md** - Project principles (MCP-first approach, language settings, quality standards)
+- **Permissions** - Allowlist/denylist based security model with deny rules for sensitive files and destructive commands
+- **Hooks** - macOS notification hooks for permission requests and task completion
+- **Status Line** - Custom status bar showing model, branch, context usage, cost, and line changes
+
+## Related Resources
+
+- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [Claude Code Action](https://github.com/anthropics/claude-code-action)
+- [Databricks AI Dev Kit Skills](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills)
+
+## License
 
 This is a personal configuration repository. Feel free to reference or fork for your own use.
