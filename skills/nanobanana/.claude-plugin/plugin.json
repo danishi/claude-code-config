@@ -1,0 +1,27 @@
+{
+  "name": "nanobanana",
+  "version": "1.0.0",
+  "description": "Generate and edit images using Google Gemini 3 Pro Image (Nano Banana Pro). Supports text-to-image, image editing, aspect ratios, 1K/2K/4K output, and batch generation. Works with Gemini Developer API and Vertex AI.",
+  "author": {
+    "name": "danishi"
+  },
+  "homepage": "https://github.com/danishi/claude-code-config/tree/main/skills/nanobanana",
+  "repository": "https://github.com/danishi/claude-code-config",
+  "license": "MIT",
+  "keywords": [
+    "generate image",
+    "create image",
+    "nano banana",
+    "nanobanana",
+    "gemini image",
+    "AI image",
+    "image editing",
+    "batch generation"
+  ],
+  "skills": [
+    "./SKILL.md"
+  ],
+  "commands": [
+    "./scripts/"
+  ]
+}

@@ -17,6 +17,12 @@
       "description": "PDF page manipulation toolkit for deleting, reordering, inserting, rotating, splitting, and merging PDF pages and files.",
       "source": "./plugins/pdf-editor",
       "category": "productivity"
+    },
+    {
+      "name": "nanobanana",
+      "description": "Generate and edit images using Google Gemini 3 Pro Image (Nano Banana Pro). Supports text-to-image, image editing, aspect ratios, 1K/2K/4K output, and batch generation.",
+      "source": "./skills/nanobanana",
+      "category": "ai-tools"
     }
   ]
 }
