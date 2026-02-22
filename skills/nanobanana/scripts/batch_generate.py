@@ -13,11 +13,14 @@ Environment Variables:
 
 import argparse
 import json
+import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from threading import Lock
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from generate import generate_image, VALID_ASPECT_RATIOS, VALID_SIZES
 
@@ -104,7 +107,18 @@ def batch_generate(
         with ThreadPoolExecutor(max_workers=parallel) as pool:
             futures = [pool.submit(_worker, t) for t in tasks]
             for fut in as_completed(futures):
-                results.append(fut.result())
+                try:
+                    results.append(fut.result())
+                except Exception as exc:
+                    results.append({
+                        "success": False,
+                        "error": str(exc),
+                        "path": None,
+                        "text": None,
+                        "metadata": None,
+                        "index": 0,
+                        "filename": "unknown",
+                    })
     else:
         for t in tasks:
             results.append(_worker(t))

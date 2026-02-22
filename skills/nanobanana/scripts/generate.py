@@ -23,7 +23,6 @@ Environment Variables:
 """
 
 import argparse
-import base64
 import json
 import os
 import sys
@@ -209,6 +208,15 @@ def generate_image(
 
         image_saved = False
         text_response = None
+
+        if not response.candidates or not response.candidates[0].content.parts:
+            return {
+                "success": False,
+                "error": "No candidates returned. The prompt may have been blocked by safety filters.",
+                "path": None,
+                "text": None,
+                "metadata": None,
+            }
 
         for part in response.candidates[0].content.parts:
             if (
