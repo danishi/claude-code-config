@@ -121,6 +121,15 @@ claude plugin install pdf-editor
 claude plugin install nanobanana
 ```
 
+### Installing Skills Directly
+
+You can also install individual skills using the `npx skills` command:
+
+```bash
+npx skills add danishi/claude-code-config --skill nanobanana
+npx skills add danishi/claude-code-config --skill pdf-editor
+```
+
 ## Usage
 
 ### danishi Plugin
