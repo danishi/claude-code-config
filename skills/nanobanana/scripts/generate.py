@@ -25,7 +25,9 @@ Environment Variables:
 import argparse
 import json
 import os
+import ssl
 import sys
+import warnings
 from datetime import datetime
 from pathlib import Path
 
@@ -39,6 +41,60 @@ except ImportError:
 
 DEFAULT_MODEL = "gemini-3-pro-image-preview"
 
+_ssl_verification_disabled = False
+
+
+def disable_ssl_verification() -> None:
+    """Disable SSL certificate verification globally.
+
+    Useful for environments behind corporate proxies or with self-signed
+    certificates.  Called once when --no-ssl-verify is passed or when the
+    NANOBANANA_NO_SSL_VERIFY environment variable is set.
+    """
+    global _ssl_verification_disabled
+    if _ssl_verification_disabled:
+        return
+
+    # Override the default HTTPS context so that stdlib and libraries that
+    # rely on ssl.create_default_context() skip certificate verification.
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+    # Suppress noisy warnings about unverified requests.
+    warnings.filterwarnings("ignore", message=".*certificate verify failed.*")
+    warnings.filterwarnings("ignore", message=".*Unverified HTTPS.*")
+
+    try:
+        import urllib3
+
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    except ImportError:
+        pass
+
+    # Monkey-patch httpx (used internally by google-genai) so that any
+    # Client / AsyncClient instances created later default to verify=False.
+    try:
+        import httpx
+
+        _original_client_init = httpx.Client.__init__
+
+        def _patched_client_init(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+            kwargs.setdefault("verify", False)
+            _original_client_init(self, *args, **kwargs)
+
+        httpx.Client.__init__ = _patched_client_init  # type: ignore[method-assign]
+
+        _original_async_init = httpx.AsyncClient.__init__
+
+        def _patched_async_init(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+            kwargs.setdefault("verify", False)
+            _original_async_init(self, *args, **kwargs)
+
+        httpx.AsyncClient.__init__ = _patched_async_init  # type: ignore[method-assign]
+    except ImportError:
+        pass
+
+    _ssl_verification_disabled = True
+
 VALID_ASPECT_RATIOS = [
     "1:1", "2:3", "3:2", "3:4", "4:3",
     "4:5", "5:4", "9:16", "16:9", "21:9",
@@ -47,13 +103,23 @@ VALID_ASPECT_RATIOS = [
 VALID_SIZES = ["1K", "2K", "4K"]
 
 
-def create_client() -> genai.Client:
+def create_client(no_ssl_verify: bool = False) -> genai.Client:
     """Create a GenAI client based on available environment variables.
 
     Priority:
         1. Vertex AI (if GOOGLE_CLOUD_PROJECT is set)
         2. Gemini Developer API (if GEMINI_API_KEY is set)
+
+    Args:
+        no_ssl_verify: If True, disable SSL certificate verification.
     """
+    if no_ssl_verify or os.environ.get("NANOBANANA_NO_SSL_VERIFY", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    ):
+        disable_ssl_verification()
+
     project = os.environ.get("GOOGLE_CLOUD_PROJECT")
     location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -119,23 +185,25 @@ def generate_image(
     image_size: str | None = None,
     use_search: bool = False,
     verbose: bool = False,
+    no_ssl_verify: bool = False,
 ) -> dict:
     """Generate or edit an image using Gemini API.
 
     Args:
-        prompt:       Text description or editing instruction.
-        output_path:  Where to save the generated image.
-        input_paths:  Input image path(s) for editing (up to 14 images).
-        aspect_ratio: Aspect ratio (e.g. "1:1", "16:9").
-        image_size:   Resolution: "1K", "2K", or "4K".
-        use_search:   Enable Google Search grounding.
-        verbose:      Print progress information.
+        prompt:         Text description or editing instruction.
+        output_path:    Where to save the generated image.
+        input_paths:    Input image path(s) for editing (up to 14 images).
+        aspect_ratio:   Aspect ratio (e.g. "1:1", "16:9").
+        image_size:     Resolution: "1K", "2K", or "4K".
+        use_search:     Enable Google Search grounding.
+        verbose:        Print progress information.
+        no_ssl_verify:  Disable SSL certificate verification.
 
     Returns:
         dict with keys: success (bool), path (str|None),
         text (str|None), error (str|None), metadata (dict|None).
     """
-    client = create_client()
+    client = create_client(no_ssl_verify=no_ssl_verify)
     model = get_model_name()
 
     if output_path is None:
@@ -315,6 +383,10 @@ Examples:
         "--json", action="store_true", dest="json_output",
         help="Output result as JSON",
     )
+    parser.add_argument(
+        "--no-ssl-verify", action="store_true",
+        help="Disable SSL certificate verification (for proxies or self-signed certs)",
+    )
 
     args = parser.parse_args()
 
@@ -326,6 +398,7 @@ Examples:
         image_size=args.size.upper() if args.size else None,
         use_search=args.search,
         verbose=args.verbose or (args.output is None and not args.json_output),
+        no_ssl_verify=args.no_ssl_verify,
     )
 
     if args.json_output:

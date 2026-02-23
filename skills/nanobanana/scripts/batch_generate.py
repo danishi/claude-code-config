@@ -22,14 +22,14 @@ from threading import Lock
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from generate import generate_image, VALID_ASPECT_RATIOS, VALID_SIZES
+from generate import generate_image, VALID_ASPECT_RATIOS, VALID_SIZES, disable_ssl_verification
 
 _print_lock = Lock()
 
 
 def _worker(args_tuple: tuple) -> dict:
     """Generate a single image (thread worker)."""
-    idx, total, filepath, prompt, aspect_ratio, image_size, use_search, verbose = args_tuple
+    idx, total, filepath, prompt, aspect_ratio, image_size, use_search, verbose, no_ssl_verify = args_tuple
 
     result = generate_image(
         prompt=prompt,
@@ -38,6 +38,7 @@ def _worker(args_tuple: tuple) -> dict:
         image_size=image_size,
         use_search=use_search,
         verbose=False,
+        no_ssl_verify=no_ssl_verify,
     )
     result["index"] = idx
     result["filename"] = filepath.name
@@ -61,24 +62,28 @@ def batch_generate(
     delay: float = 3.0,
     parallel: int = 1,
     verbose: bool = True,
+    no_ssl_verify: bool = False,
 ) -> list[dict]:
     """Generate multiple images with sequential naming.
 
     Args:
-        prompt:       Text description for image generation.
-        count:        Number of images to generate.
-        output_dir:   Directory to save images.
-        prefix:       Filename prefix.
-        aspect_ratio: Aspect ratio (e.g. "1:1", "16:9").
-        image_size:   Resolution: "1K", "2K", or "4K".
-        use_search:   Enable Google Search grounding.
-        delay:        Seconds between sequential generations.
-        parallel:     Number of concurrent requests (1 = sequential).
-        verbose:      Print progress.
+        prompt:         Text description for image generation.
+        count:          Number of images to generate.
+        output_dir:     Directory to save images.
+        prefix:         Filename prefix.
+        aspect_ratio:   Aspect ratio (e.g. "1:1", "16:9").
+        image_size:     Resolution: "1K", "2K", or "4K".
+        use_search:     Enable Google Search grounding.
+        delay:          Seconds between sequential generations.
+        parallel:       Number of concurrent requests (1 = sequential).
+        verbose:        Print progress.
+        no_ssl_verify:  Disable SSL certificate verification.
 
     Returns:
         List of result dicts.
     """
+    if no_ssl_verify:
+        disable_ssl_verification()
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -98,7 +103,7 @@ def batch_generate(
     for i in range(1, count + 1):
         fname = f"{prefix}-{str(i).zfill(len(str(count)))}.png"
         tasks.append(
-            (i, count, out / fname, prompt, aspect_ratio, image_size, use_search, verbose)
+            (i, count, out / fname, prompt, aspect_ratio, image_size, use_search, verbose, no_ssl_verify)
         )
 
     results: list[dict] = []
@@ -172,6 +177,10 @@ Examples:
     )
     parser.add_argument("-q", "--quiet", action="store_true", help="Suppress progress")
     parser.add_argument("--json", action="store_true", dest="json_output", help="Output as JSON")
+    parser.add_argument(
+        "--no-ssl-verify", action="store_true",
+        help="Disable SSL certificate verification (for proxies or self-signed certs)",
+    )
 
     args = parser.parse_args()
 
@@ -186,6 +195,7 @@ Examples:
         delay=args.delay,
         parallel=args.parallel,
         verbose=not args.quiet,
+        no_ssl_verify=args.no_ssl_verify,
     )
 
     if args.json_output:
