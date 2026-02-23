@@ -51,6 +51,7 @@ export GOOGLE_CLOUD_LOCATION="us-central1"   # optional, defaults to us-central1
 |---|---|---|
 | `NANOBANANA_MODEL` | `gemini-3-pro-image-preview` | Override the model name |
 | `IMAGE_OUTPUT_DIR` | `./nanobanana-images` | Default output directory |
+| `NANOBANANA_NO_SSL_VERIFY` | _(unset)_ | Set to `1` / `true` / `yes` to disable SSL certificate verification |
 
 ---
 
@@ -91,6 +92,12 @@ python scripts/generate.py "photo of the Eiffel Tower at sunset" \
   --search -o eiffel.png
 ```
 
+#### Disable SSL verification (for corporate proxies or self-signed certs)
+
+```bash
+python scripts/generate.py "abstract art" --no-ssl-verify -o art.png
+```
+
 #### JSON output (for programmatic use)
 
 ```bash
@@ -101,7 +108,7 @@ python scripts/generate.py "abstract art" --json -o art.png
 
 ```
 usage: generate.py [-h] [-o OUTPUT] [-i INPUTS] [-r RATIO] [-s SIZE]
-                   [--search] [-v] [--json] prompt
+                   [--search] [-v] [--json] [--no-ssl-verify] prompt
 
 Arguments:
   prompt              Text prompt for image generation
@@ -114,6 +121,7 @@ Options:
   --search            Enable Google Search grounding
   -v, --verbose       Show detailed output
   --json              Output result as JSON
+  --no-ssl-verify     Disable SSL certificate verification
 ```
 
 ---
@@ -146,7 +154,7 @@ python scripts/batch_generate.py "icon set" -n 20 --parallel 5 -d ./icons
 ```
 usage: batch_generate.py [-h] [-n COUNT] [-d DIR] [-p PREFIX] [-r RATIO]
                          [-s SIZE] [--search] [--delay DELAY]
-                         [--parallel N] [-q] [--json] prompt
+                         [--parallel N] [-q] [--json] [--no-ssl-verify] prompt
 
 Arguments:
   prompt              Text prompt for image generation
@@ -162,6 +170,7 @@ Options:
   --parallel N        Concurrent requests (default: 1, max recommended: 5)
   -q, --quiet         Suppress progress output
   --json              Output results as JSON
+  --no-ssl-verify     Disable SSL certificate verification
 ```
 
 ---
@@ -218,3 +227,4 @@ See `references/prompts.md` for a comprehensive prompt reference with category-s
 | `Content blocked by safety filters` | Rephrase the prompt to avoid restricted content |
 | `API rate limit reached` | Wait and retry; use `--delay` for batch operations |
 | `Image file not found` | Verify the `-i` input path is correct |
+| `SSL: CERTIFICATE_VERIFY_FAILED` | Use `--no-ssl-verify` or set `NANOBANANA_NO_SSL_VERIFY=1` |
