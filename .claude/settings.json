@@ -87,7 +87,6 @@
     ]
   },
   "enabledPlugins": {
-    "example-skills@anthropic-agent-skills": true,
     "document-skills@anthropic-agent-skills": true,
     "danishi@claude-code-config": true
   },
