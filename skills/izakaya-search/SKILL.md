@@ -78,6 +78,8 @@ at least these sources:
 - Add optional preferences (private room, all-you-can-drink, etc.)
 - Search for specific course/plan information when budget is specified
 - If initial results are insufficient, refine queries and search again
+- Prefer extracting information from `WebSearch` snippets when possible,
+  especially for sites known to block `WebFetch` (see Step 3)
 
 ### Step 3: Gather detailed information
 
@@ -91,6 +93,38 @@ Use `WebFetch` to visit the top candidate restaurant pages and collect:
 - Reservation availability
 - Direct reservation page URLs
 - Notable features (all-you-can-drink plans, smoking policy, etc.)
+
+#### WebFetch resilience strategy
+
+**Batch size control (critical):**
+Parallel `WebFetch` calls share a failure boundary — if one call returns
+an error (403, 404, timeout), **all sibling calls in the same batch are
+cancelled**. To mitigate this:
+
+1. **Limit parallel batches to 2-3 calls maximum** (never 5+)
+2. **Group by reliability tier** — put sites that are likely to succeed
+   together, and isolate risky sites into their own batch or run them
+   sequentially
+3. **Prioritize high-value fetches** — fetch the most important pages
+   first so that even if later batches fail, you already have usable data
+
+**Site reliability tiers:**
+
+| Tier | Sites | Strategy |
+|---|---|---|
+| Tier 1 (reliable) | Google Maps, aumo, ヒトサラ, さんたつ, TripAdvisor | Safe to batch together (2-3 per batch) |
+| Tier 2 (sometimes blocked) | ぐるなび (`r.gnavi.co.jp`) | Fetch individually or with Tier 1 sites |
+| Tier 3 (frequently blocked) | 食べログ (`tabelog.com`), ホットペッパー (`hotpepper.jp`), RETRIP (`rtrp.jp`) | Fetch individually; expect 403 errors |
+| Tier 4 (not fetchable) | JS-rendered SPAs (colmo, etc.) | Skip `WebFetch`; rely on `WebSearch` snippets only |
+
+**Fallback strategy when WebFetch fails:**
+
+1. Extract as much information as possible from `WebSearch` result
+   snippets (ratings, addresses, phone numbers often appear in snippets)
+2. Try alternative URLs for the same restaurant on a different platform
+3. Use Google Maps search results, which tend to be the most accessible
+4. If a specific restaurant page is critical, try the Google cached
+   version via `WebSearch`: `"cache:{url}"` or `"{restaurant_name} site:{domain}"`
 
 ### Step 4: Calculate composite review ratings
 
@@ -225,11 +259,31 @@ See `references/search-guide.md` for a comprehensive search strategy reference.
 
 ## Error Handling
 
+### Search-level issues
+
 | Issue | Solution |
 |---|---|
 | No results found for area | Broaden the area (e.g., "新宿" instead of "新宿三丁目") |
 | Budget too restrictive | Suggest adjusting budget range or removing course requirement |
 | No reviews available | Note this to the user; rely on other available sources |
-| Restaurant page unavailable | Try alternative gourmet site URLs |
 | Outdated information suspected | Warn the user and suggest calling to confirm |
 | All-you-can-drink not available | Suggest alternative plans or nearby options that offer it |
+
+### WebFetch access errors
+
+| Error | Affected sites | Solution |
+|---|---|---|
+| **HTTP 403 Forbidden** | 食べログ, ホットペッパー, RETRIP | Bot protection is active. Do NOT retry. Use `WebSearch` snippets for ratings/info, or fetch the same restaurant from a Tier 1 site instead |
+| **HTTP 404 Not Found** | ホットペッパー (store pages) | URL may have changed. Search for the restaurant name + "ホットペッパー" via `WebSearch` to find the current URL |
+| **Sibling call cancelled** | Any site in a failed batch | A different call in the same parallel batch failed. Re-fetch the cancelled URLs in a new, smaller batch (1-2 calls) |
+| **Empty/JS-only content** | colmo, some SPA-based review sites | Site requires JavaScript rendering. Skip `WebFetch` and rely on `WebSearch` snippets only |
+| **Timeout** | Any site under heavy load | Retry once individually (not in a batch). If still failing, fall back to `WebSearch` snippets |
+
+### Recovery priority
+
+When multiple fetches fail, prioritize recovery in this order:
+
+1. **Google Maps pages** — highest weight in composite score (45%)
+2. **Tabelog search result pages** — often accessible even when individual store pages are blocked
+3. **ぐるなび store pages** — moderate success rate
+4. **ホットペッパー** — lowest priority due to frequent blocks; use `WebSearch` snippets for course/coupon info
