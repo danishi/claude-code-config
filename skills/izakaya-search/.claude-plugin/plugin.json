@@ -1,0 +1,31 @@
+{
+  "name": "izakaya-search",
+  "version": "1.0.0",
+  "description": "Search and recommend izakaya (Japanese-style pubs) and restaurants based on party size, budget, and area. Aggregates reviews from gourmet sites and Google Maps with fake review detection, calculates composite ratings, and provides reservation links for quick booking.",
+  "author": {
+    "name": "danishi"
+  },
+  "homepage": "https://github.com/danishi/claude-code-config/tree/main/skills/izakaya-search",
+  "repository": "https://github.com/danishi/claude-code-config",
+  "license": "MIT",
+  "keywords": [
+    "izakaya",
+    "restaurant",
+    "search restaurant",
+    "izakaya search",
+    "gourmet",
+    "tabelog",
+    "hot pepper",
+    "google maps",
+    "reservation",
+    "review",
+    "japanese food",
+    "drinking party"
+  ],
+  "skills": [
+    "./SKILL.md"
+  ],
+  "commands": [
+    "./scripts/"
+  ]
+}

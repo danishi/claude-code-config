@@ -23,6 +23,12 @@
       "description": "Generate and edit images using Google Gemini 3 Pro Image (Nano Banana Pro). Supports text-to-image, image editing, aspect ratios, 1K/2K/4K output, and batch generation.",
       "source": "./skills/nanobanana",
       "category": "ai-tools"
+    },
+    {
+      "name": "izakaya-search",
+      "description": "Search and recommend izakaya and restaurants based on party size, budget, and area. Aggregates reviews from Tabelog, Hot Pepper, and Google Maps with composite ratings and reservation links.",
+      "source": "./skills/izakaya-search",
+      "category": "lifestyle"
     }
   ]
 }
