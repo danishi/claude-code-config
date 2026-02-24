@@ -21,12 +21,13 @@ Personal repository for managing Claude Code settings, plugins, and development 
 │   ├── danishi/               # Base toolkit plugin
 │   └── pdf-editor/            # PDF manipulation plugin
 └── skills/
-    └── nanobanana/            # AI image generation skill
+    ├── nanobanana/            # AI image generation skill
+    └── izakaya-search/        # Japanese restaurant search skill
 ```
 
 ## Plugins & Skills
 
-This repository provides three plugins via the Claude Code marketplace:
+This repository provides four plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -59,6 +60,17 @@ AI image generation using Google Gemini 3 Pro Image (Nano Banana Pro):
 - **High Resolution** - Standard, 2K, and 4K output
 - **Batch Generation** - Generate multiple images with parallel execution support
 - **Prompt Reference** - Built-in prompt templates and best practices
+
+### izakaya-search Skill
+
+Search and recommend izakaya and restaurants for group dining:
+
+- **Interactive Interview** - Asks about area, party size, budget, and preferences
+- **Multi-site Search** - Searches Tabelog, Hot Pepper, Gurunavi, and Google Maps in parallel
+- **Composite Ratings** - Weighted scores (Google Maps 45%, Tabelog 35%, Hot Pepper 20%)
+- **Fake Review Detection** - Detects and penalizes suspected sakura reviews on Google Maps
+- **Quick Booking** - Provides reservation links, course info, and Google Maps directions
+- **Search Reference** - Built-in query templates by occasion, cuisine, and features
 
 ## MCP Servers
 
@@ -119,6 +131,7 @@ Install a specific plugin:
 claude plugin install danishi
 claude plugin install pdf-editor
 claude plugin install nanobanana
+claude plugin install izakaya-search
 ```
 
 ### Installing Skills Directly
@@ -127,6 +140,7 @@ You can also install individual skills using the `npx skills` command:
 
 ```bash
 npx skills add danishi/claude-code-config --skill nanobanana
+npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
 ```
 
@@ -193,6 +207,17 @@ python3 <skill_dir>/scripts/batch_generate.py "pixel art logo" -n 20 -d ./logos 
 ```
 
 See [skills/nanobanana/SKILL.md](skills/nanobanana/SKILL.md) for full documentation and options.
+
+### izakaya-search Skill
+
+**Invoke the skill in Claude Code:**
+```
+/izakaya-search
+```
+
+Claude will interactively ask about area, party size, budget, and preferences, then search multiple gourmet sites and present restaurant recommendations with composite ratings and reservation links.
+
+See [skills/izakaya-search/SKILL.md](skills/izakaya-search/SKILL.md) for full documentation and options.
 
 ## Project Settings
 
