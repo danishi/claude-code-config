@@ -98,31 +98,57 @@ Compute a weighted composite score from available review sources:
 
 | Source | Weight | Score range | Notes |
 |---|---|---|---|
-| Tabelog | 40% | 1.0 - 5.0 | Most trusted for food quality in Japan |
-| Google Maps | 35% | 1.0 - 5.0 | Reflects general customer satisfaction |
-| Hot Pepper / Gurunavi | 25% | 1.0 - 5.0 | Useful for atmosphere and service |
+| Google Maps | 45% | 1.0 - 5.0 | Largest review volume; highest weight |
+| Tabelog | 35% | 1.0 - 5.0 | Most trusted for food quality in Japan |
+| Hot Pepper / Gurunavi | 20% | 1.0 - 5.0 | Useful for atmosphere and service |
 
 **Composite score formula:**
 
 ```
-composite = (tabelog * 0.40) + (google * 0.35) + (hotpepper_or_gurunavi * 0.25)
+composite = (google * 0.45) + (tabelog * 0.35) + (hotpepper_or_gurunavi * 0.20)
 ```
 
 - If a source is unavailable, redistribute its weight proportionally
   to the remaining sources
-- Example: If only Tabelog (3.8) and Google (4.2) are available:
-  - Tabelog weight: 0.40 / (0.40 + 0.35) = 0.533
-  - Google weight: 0.35 / (0.40 + 0.35) = 0.467
-  - Composite: (3.8 * 0.533) + (4.2 * 0.467) = 3.987
+- Example: If only Google (4.2) and Tabelog (3.8) are available:
+  - Google weight: 0.45 / (0.45 + 0.35) = 0.5625
+  - Tabelog weight: 0.35 / (0.45 + 0.35) = 0.4375
+  - Composite: (4.2 * 0.5625) + (3.8 * 0.4375) = 4.025
 - Display scores rounded to 2 decimal places
 - Include the number of reviews from each source when available
 
+#### Google Maps fake review (sakura) detection
+
+Google Maps reviews are susceptible to fake positive reviews (サクラ).
+When gathering Google Maps data, **always check for the following red flags**
+and apply a penalty to the Google Maps score if detected:
+
+| Red flag | How to detect | Penalty |
+|---|---|---|
+| Suspiciously high ratio of 5-star reviews | >80% of reviews are 5-star with very few 3-4 star | -0.3 from Google score |
+| Generic/short praise comments | Many reviews are only 1-2 sentences like "美味しかった！" with no detail | -0.2 from Google score |
+| Reviewer profiles with only 1 review | Multiple reviewers who have only ever reviewed this one restaurant | -0.3 from Google score |
+| Review spike pattern | Large number of reviews posted within a short time period | -0.3 from Google score |
+| Score gap vs. Tabelog | Google score is ≥1.0 higher than Tabelog score for the same restaurant | -0.2 from Google score |
+
+**Detection process:**
+
+1. When using `WebFetch` on the Google Maps page, scan the visible review
+   comments (at least 5-10 recent reviews)
+2. Check if most comments are generic one-liners without specific dish
+   or experience details
+3. Look at reviewer info: are they "Local Guide" with many reviews, or
+   single-review accounts?
+4. Compare the Google Maps score against the Tabelog score; a gap of ≥1.0
+   is a strong signal of inflated reviews
+5. Apply cumulative penalties (cap at -0.8 total) and note the adjustment
+   in the output as "**adjusted score**"
+6. If fake reviews are suspected, add a warning emoji and note:
+   `⚠ Google Maps score adjusted ({original} → {adjusted}): suspected fake reviews detected`
+
 ### Step 5: Format and present results
 
-Use `scripts/format_report.py` to generate a formatted comparison report,
-or format the results directly as follows.
-
-Present **3 to 5 recommended restaurants** in the following format:
+Present **3 to 5 recommended restaurants** directly in Markdown format as follows:
 
 ---
 
@@ -181,93 +207,6 @@ If the user selects a restaurant, provide:
 2. Phone number for telephone reservations
 3. Google Maps link for directions
 4. Recommended course based on their budget and party size
-
----
-
-## Scripts
-
-### `scripts/format_report.py` - Restaurant comparison report generator
-
-Takes collected restaurant data as JSON and generates a formatted
-Markdown comparison report.
-
-#### Usage
-
-```bash
-python scripts/format_report.py -i restaurants.json -o report.md
-```
-
-#### From stdin (piped JSON)
-
-```bash
-echo '{"restaurants": [...]}' | python scripts/format_report.py -o report.md
-```
-
-#### Full options
-
-```
-usage: format_report.py [-h] [-i INPUT] [-o OUTPUT] [--format FORMAT]
-                         [--top N] [--sort FIELD] [--lang LANG]
-
-Options:
-  -i, --input PATH    Input JSON file with restaurant data (default: stdin)
-  -o, --output PATH   Output file path (default: stdout)
-  --format FORMAT     Output format: markdown, csv, json (default: markdown)
-  --top N             Number of top restaurants to include (default: 5)
-  --sort FIELD        Sort by: composite, tabelog, google, budget (default: composite)
-  --lang LANG         Output language: ja, en (default: ja)
-```
-
-#### Input JSON schema
-
-```json
-{
-  "search_params": {
-    "area": "新宿",
-    "party_size": 6,
-    "budget_min": 3000,
-    "budget_max": 5000,
-    "preferences": ["個室", "飲み放題"]
-  },
-  "restaurants": [
-    {
-      "name": "居酒屋 Example",
-      "area": "新宿駅東口",
-      "nearest_station": "新宿駅",
-      "walk_minutes": 3,
-      "genre": "居酒屋・和食",
-      "budget_min": 3000,
-      "budget_max": 5000,
-      "hours": "17:00-24:00",
-      "holidays": "日曜日",
-      "seats": 80,
-      "room_types": ["テーブル", "個室", "掘りごたつ"],
-      "features": ["飲み放題", "個室", "禁煙"],
-      "ratings": {
-        "tabelog": { "score": 3.65, "count": 120 },
-        "google": { "score": 4.1, "count": 350 },
-        "hotpepper": { "score": 3.8, "count": 85 }
-      },
-      "courses": [
-        {
-          "name": "宴会コース",
-          "price": 4000,
-          "duration": "2.5h",
-          "includes": "飲み放題付き 全8品"
-        }
-      ],
-      "urls": {
-        "tabelog": "https://tabelog.com/...",
-        "hotpepper": "https://www.hotpepper.jp/...",
-        "google_maps": "https://maps.google.com/...",
-        "reservation_tabelog": "https://tabelog.com/.../reserve",
-        "reservation_hotpepper": "https://www.hotpepper.jp/.../reserve"
-      },
-      "phone": "03-XXXX-XXXX"
-    }
-  ]
-}
-```
 
 ---
 
