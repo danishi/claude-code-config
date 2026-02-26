@@ -345,7 +345,7 @@ def generate_image(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate images using Nano Banana Pro (Gemini 3.1 Flash Image)",
+        description="Generate images using Nano Banana 2 (Gemini 3.1 Flash Image)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:

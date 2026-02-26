@@ -20,7 +20,7 @@
     },
     {
       "name": "nanobanana",
-      "description": "Generate and edit images using Google Gemini 3.1 Flash Image (Nano Banana Pro). Supports text-to-image, image editing, aspect ratios, 1K/2K/4K output, and batch generation.",
+      "description": "Generate and edit images using Google Gemini 3.1 Flash Image (Nano Banana 2). Supports text-to-image, image editing, aspect ratios, 1K/2K/4K output, and batch generation.",
       "source": "./skills/nanobanana",
       "category": "ai-tools"
     },
