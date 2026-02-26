@@ -1,7 +1,7 @@
 ---
 name: nanobanana
 description: >
-  Generate and edit images using Google Gemini 3 Pro Image (Nano Banana Pro).
+  Generate and edit images using Google Gemini 3.1 Flash Image (Nano Banana Pro).
   Supports text-to-image generation, image editing with reference images,
   configurable aspect ratios, 1K/2K/4K output, Google Search grounding,
   and batch generation. Works with both Gemini Developer API and Vertex AI.
@@ -10,7 +10,7 @@ description: >
 # Nano Banana - AI Image Generation Skill
 
 Use the Python scripts in `scripts/` to generate and edit images via
-Google's **Nano Banana Pro** model (`gemini-3-pro-image-preview`).
+Google's **Nano Banana Pro** model (`gemini-3.1-flash-image-preview`).
 
 ## Prerequisites
 
@@ -49,7 +49,7 @@ export GOOGLE_CLOUD_LOCATION="us-central1"   # optional, defaults to us-central1
 
 | Variable | Default | Description |
 |---|---|---|
-| `NANOBANANA_MODEL` | `gemini-3-pro-image-preview` | Override the model name |
+| `NANOBANANA_MODEL` | `gemini-3.1-flash-image-preview` | Override the model name |
 | `IMAGE_OUTPUT_DIR` | `./nanobanana-images` | Default output directory |
 | `NANOBANANA_NO_SSL_VERIFY` | _(unset)_ | Set to `1` / `true` / `yes` to disable SSL certificate verification |
 

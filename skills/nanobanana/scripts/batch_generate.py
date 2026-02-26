@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Batch image generation using Nano Banana Pro (Gemini 3 Pro Image).
+Batch image generation using Nano Banana Pro (Gemini 3.1 Flash Image).
 
 Usage:
     python batch_generate.py "pixel art logo" -n 20 -d ./logos -p logo

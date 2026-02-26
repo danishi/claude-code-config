@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Nano Banana - AI Image Generation using Google Gemini 3 Pro Image
+Nano Banana - AI Image Generation using Google Gemini 3.1 Flash Image
 
 Supports both Gemini Developer API and Vertex AI API platforms.
 
@@ -18,7 +18,7 @@ Environment Variables:
         GOOGLE_CLOUD_LOCATION - GCP region (default: us-central1)
 
     Common:
-        NANOBANANA_MODEL      - Model name (default: gemini-3-pro-image-preview)
+        NANOBANANA_MODEL      - Model name (default: gemini-3.1-flash-image-preview)
         IMAGE_OUTPUT_DIR      - Default output directory (default: ./nanobanana-images)
 """
 
@@ -39,7 +39,7 @@ except ImportError:
     print("Install with: pip install google-genai Pillow", file=sys.stderr)
     sys.exit(1)
 
-DEFAULT_MODEL = "gemini-3-pro-image-preview"
+DEFAULT_MODEL = "gemini-3.1-flash-image-preview"
 
 _ssl_verification_disabled = False
 
@@ -345,7 +345,7 @@ def generate_image(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate images using Nano Banana Pro (Gemini 3 Pro Image)",
+        description="Generate images using Nano Banana Pro (Gemini 3.1 Flash Image)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
