@@ -52,7 +52,7 @@ PDF page manipulation toolkit with a specialized `pdf-operator` agent:
 
 ### nanobanana Skill
 
-AI image generation using Google Gemini 3.1 Flash Image (Nano Banana 2):
+AI image generation using Google Gemini (Nano Banana Pro / Nano Banana 2):
 
 - **Text-to-Image** - Generate images from text prompts
 - **Image Editing** - Transform existing images with natural language instructions

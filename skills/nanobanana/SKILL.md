@@ -1,7 +1,8 @@
 ---
 name: nanobanana
 description: >
-  Generate and edit images using Google Gemini 3.1 Flash Image (Nano Banana 2).
+  Generate and edit images using Google Gemini (Nano Banana Pro / Nano Banana 2).
+  Automatically selects the best model based on prompt complexity.
   Supports text-to-image generation, image editing with reference images,
   configurable aspect ratios, 1K/2K/4K output, Google Search grounding,
   and batch generation. Works with both Gemini Developer API and Vertex AI.
@@ -9,8 +10,13 @@ description: >
 
 # Nano Banana - AI Image Generation Skill
 
-Use the Python scripts in `scripts/` to generate and edit images via
-Google's **Nano Banana 2** model (`gemini-3.1-flash-image-preview`).
+Use the Python scripts in `scripts/` to generate and edit images via Google Gemini.
+The model is **automatically selected** based on prompt complexity:
+
+| Model | ID | When used |
+|---|---|---|
+| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Complex prompts (long text, multiple inputs, 4K, search grounding) |
+| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Simple prompts (short text, single/no input, standard resolution) |
 
 ## Prerequisites
 
@@ -49,7 +55,7 @@ export GOOGLE_CLOUD_LOCATION="us-central1"   # optional, defaults to us-central1
 
 | Variable | Default | Description |
 |---|---|---|
-| `NANOBANANA_MODEL` | `gemini-3.1-flash-image-preview` | Override the model name |
+| `NANOBANANA_MODEL` | _(auto)_ | Force a specific model (overrides auto-selection) |
 | `IMAGE_OUTPUT_DIR` | `./nanobanana-images` | Default output directory |
 | `NANOBANANA_NO_SSL_VERIFY` | _(unset)_ | Set to `1` / `true` / `yes` to disable SSL certificate verification |
 

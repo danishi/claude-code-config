@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Nano Banana - AI Image Generation using Google Gemini 3.1 Flash Image
+Nano Banana - AI Image Generation using Google Gemini
+
+Automatically selects the best model based on prompt complexity:
+  - Nano Banana Pro  (gemini-3-pro-image-preview)    : complex prompts
+  - Nano Banana 2    (gemini-3.1-flash-image-preview) : simple prompts
 
 Supports both Gemini Developer API and Vertex AI API platforms.
 
@@ -18,7 +22,7 @@ Environment Variables:
         GOOGLE_CLOUD_LOCATION - GCP region (default: us-central1)
 
     Common:
-        NANOBANANA_MODEL      - Model name (default: gemini-3.1-flash-image-preview)
+        NANOBANANA_MODEL      - Force a specific model (overrides auto-selection)
         IMAGE_OUTPUT_DIR      - Default output directory (default: ./nanobanana-images)
 """
 
@@ -39,7 +43,12 @@ except ImportError:
     print("Install with: pip install google-genai Pillow", file=sys.stderr)
     sys.exit(1)
 
-DEFAULT_MODEL = "gemini-3.1-flash-image-preview"
+MODEL_PRO = "gemini-3-pro-image-preview"
+MODEL_FLASH = "gemini-3.1-flash-image-preview"
+
+# Thresholds for auto-selecting Nano Banana Pro
+_COMPLEXITY_PROMPT_LENGTH = 100
+_COMPLEXITY_INPUT_IMAGES = 2
 
 _ssl_verification_disabled = False
 
@@ -144,9 +153,37 @@ def create_client(no_ssl_verify: bool = False) -> genai.Client:
     sys.exit(1)
 
 
-def get_model_name() -> str:
-    """Return the model name from env or default."""
-    return os.environ.get("NANOBANANA_MODEL", DEFAULT_MODEL)
+def select_model(
+    prompt: str,
+    input_paths: list[str] | None = None,
+    image_size: str | None = None,
+    use_search: bool = False,
+) -> str:
+    """Select the best model based on prompt complexity.
+
+    Returns Nano Banana Pro for complex requests and Nano Banana 2 for
+    simple ones.  The NANOBANANA_MODEL env var overrides auto-selection.
+
+    Complexity criteria (any one triggers Pro):
+      - Prompt longer than 100 characters
+      - 2 or more input images
+      - 4K resolution requested
+      - Google Search grounding enabled
+    """
+    override = os.environ.get("NANOBANANA_MODEL")
+    if override:
+        return override
+
+    num_inputs = len(input_paths) if input_paths else 0
+
+    is_complex = (
+        len(prompt) >= _COMPLEXITY_PROMPT_LENGTH
+        or num_inputs >= _COMPLEXITY_INPUT_IMAGES
+        or (image_size and image_size.upper() == "4K")
+        or use_search
+    )
+
+    return MODEL_PRO if is_complex else MODEL_FLASH
 
 
 def load_image_bytes(path: str) -> tuple[bytes, str]:
@@ -204,7 +241,12 @@ def generate_image(
         text (str|None), error (str|None), metadata (dict|None).
     """
     client = create_client(no_ssl_verify=no_ssl_verify)
-    model = get_model_name()
+    model = select_model(
+        prompt=prompt,
+        input_paths=input_paths,
+        image_size=image_size,
+        use_search=use_search,
+    )
 
     if output_path is None:
         output_path = generate_output_path()
@@ -345,7 +387,7 @@ def generate_image(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate images using Nano Banana 2 (Gemini 3.1 Flash Image)",
+        description="Generate images using Nano Banana (auto-selects Pro or 2 based on complexity)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
