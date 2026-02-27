@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Nano Banana - AI Image Generation using Google Gemini 3 Pro Image
+Nano Banana - AI Image Generation using Google Gemini
+
+Automatically selects the best model based on prompt complexity:
+  - Nano Banana Pro  (gemini-3-pro-image-preview)    : complex prompts
+  - Nano Banana 2    (gemini-3.1-flash-image-preview) : simple prompts
 
 Supports both Gemini Developer API and Vertex AI API platforms.
 
@@ -18,7 +22,7 @@ Environment Variables:
         GOOGLE_CLOUD_LOCATION - GCP region (default: us-central1)
 
     Common:
-        NANOBANANA_MODEL      - Model name (default: gemini-3-pro-image-preview)
+        NANOBANANA_MODEL      - Force a specific model (overrides auto-selection)
         IMAGE_OUTPUT_DIR      - Default output directory (default: ./nanobanana-images)
 """
 
@@ -39,7 +43,19 @@ except ImportError:
     print("Install with: pip install google-genai Pillow", file=sys.stderr)
     sys.exit(1)
 
-DEFAULT_MODEL = "gemini-3-pro-image-preview"
+MODEL_PRO = "gemini-3-pro-image-preview"
+MODEL_FLASH = "gemini-3.1-flash-image-preview"
+
+# Thresholds for auto-selecting Nano Banana Pro
+_COMPLEXITY_PROMPT_LENGTH = 100
+_COMPLEXITY_INPUT_IMAGES = 2
+
+# Keywords in prompt that trigger Nano Banana Pro
+_PRO_KEYWORDS = [
+    "高品質", "高精細", "高解像度", "プロ", "pro ",
+    "high quality", "high detail", "ultra detail", "professional",
+    "photorealistic", "hyper realistic",
+]
 
 _ssl_verification_disabled = False
 
@@ -144,9 +160,45 @@ def create_client(no_ssl_verify: bool = False) -> genai.Client:
     sys.exit(1)
 
 
-def get_model_name() -> str:
-    """Return the model name from env or default."""
-    return os.environ.get("NANOBANANA_MODEL", DEFAULT_MODEL)
+def select_model(
+    prompt: str,
+    input_paths: list[str] | None = None,
+    image_size: str | None = None,
+    use_search: bool = False,
+    force_pro: bool = False,
+) -> str:
+    """Select the best model based on prompt complexity.
+
+    Returns Nano Banana Pro for complex requests and Nano Banana 2 for
+    simple ones.  The NANOBANANA_MODEL env var overrides auto-selection.
+
+    Complexity criteria (any one triggers Pro):
+      - ``force_pro`` flag (--pro CLI option)
+      - Prompt contains quality keywords (e.g. "高品質", "professional")
+      - Prompt longer than 100 characters
+      - 2 or more input images
+      - 4K resolution requested
+      - Google Search grounding enabled
+    """
+    override = os.environ.get("NANOBANANA_MODEL")
+    if override:
+        return override
+
+    if force_pro:
+        return MODEL_PRO
+
+    num_inputs = len(input_paths) if input_paths else 0
+    prompt_lower = prompt.lower()
+
+    is_complex = (
+        len(prompt) >= _COMPLEXITY_PROMPT_LENGTH
+        or num_inputs >= _COMPLEXITY_INPUT_IMAGES
+        or (image_size and image_size.upper() == "4K")
+        or use_search
+        or any(kw in prompt_lower for kw in _PRO_KEYWORDS)
+    )
+
+    return MODEL_PRO if is_complex else MODEL_FLASH
 
 
 def load_image_bytes(path: str) -> tuple[bytes, str]:
@@ -184,6 +236,7 @@ def generate_image(
     aspect_ratio: str | None = None,
     image_size: str | None = None,
     use_search: bool = False,
+    force_pro: bool = False,
     verbose: bool = False,
     no_ssl_verify: bool = False,
 ) -> dict:
@@ -196,6 +249,7 @@ def generate_image(
         aspect_ratio:   Aspect ratio (e.g. "1:1", "16:9").
         image_size:     Resolution: "1K", "2K", or "4K".
         use_search:     Enable Google Search grounding.
+        force_pro:      Force Nano Banana Pro model.
         verbose:        Print progress information.
         no_ssl_verify:  Disable SSL certificate verification.
 
@@ -204,7 +258,13 @@ def generate_image(
         text (str|None), error (str|None), metadata (dict|None).
     """
     client = create_client(no_ssl_verify=no_ssl_verify)
-    model = get_model_name()
+    model = select_model(
+        prompt=prompt,
+        input_paths=input_paths,
+        image_size=image_size,
+        use_search=use_search,
+        force_pro=force_pro,
+    )
 
     if output_path is None:
         output_path = generate_output_path()
@@ -345,7 +405,7 @@ def generate_image(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate images using Nano Banana Pro (Gemini 3 Pro Image)",
+        description="Generate images using Nano Banana (auto-selects Pro or 2 based on complexity)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
@@ -376,6 +436,10 @@ Examples:
         help="Enable Google Search grounding for real-world accuracy",
     )
     parser.add_argument(
+        "--pro", action="store_true",
+        help="Force Nano Banana Pro model regardless of auto-selection",
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true",
         help="Show detailed output",
     )
@@ -397,6 +461,7 @@ Examples:
         aspect_ratio=args.ratio,
         image_size=args.size.upper() if args.size else None,
         use_search=args.search,
+        force_pro=args.pro,
         verbose=args.verbose or (args.output is None and not args.json_output),
         no_ssl_verify=args.no_ssl_verify,
     )

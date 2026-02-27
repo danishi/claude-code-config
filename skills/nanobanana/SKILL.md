@@ -1,7 +1,8 @@
 ---
 name: nanobanana
 description: >
-  Generate and edit images using Google Gemini 3 Pro Image (Nano Banana Pro).
+  Generate and edit images using Google Gemini (Nano Banana Pro / Nano Banana 2).
+  Automatically selects the best model based on prompt complexity.
   Supports text-to-image generation, image editing with reference images,
   configurable aspect ratios, 1K/2K/4K output, Google Search grounding,
   and batch generation. Works with both Gemini Developer API and Vertex AI.
@@ -9,8 +10,22 @@ description: >
 
 # Nano Banana - AI Image Generation Skill
 
-Use the Python scripts in `scripts/` to generate and edit images via
-Google's **Nano Banana Pro** model (`gemini-3-pro-image-preview`).
+Use the Python scripts in `scripts/` to generate and edit images via Google Gemini.
+The model is **automatically selected** based on prompt complexity:
+
+| Model | ID | When used |
+|---|---|---|
+| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Complex or high-quality requests |
+| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Simple, lightweight requests |
+
+**Nano Banana Pro is auto-selected when any of these conditions are met (OR):**
+
+- `--pro` flag is specified
+- Prompt contains quality keywords (e.g. `高品質`, `高精細`, `プロ`, `professional`, `photorealistic`)
+- Prompt is 100+ characters long
+- 2 or more input images
+- 4K resolution requested
+- Google Search grounding enabled
 
 ## Prerequisites
 
@@ -49,7 +64,7 @@ export GOOGLE_CLOUD_LOCATION="us-central1"   # optional, defaults to us-central1
 
 | Variable | Default | Description |
 |---|---|---|
-| `NANOBANANA_MODEL` | `gemini-3-pro-image-preview` | Override the model name |
+| `NANOBANANA_MODEL` | _(auto)_ | Force a specific model (overrides auto-selection) |
 | `IMAGE_OUTPUT_DIR` | `./nanobanana-images` | Default output directory |
 | `NANOBANANA_NO_SSL_VERIFY` | _(unset)_ | Set to `1` / `true` / `yes` to disable SSL certificate verification |
 
@@ -119,6 +134,7 @@ Options:
   -r, --ratio RATIO   Aspect ratio: 1:1, 2:3, 3:2, 3:4, 4:3, 4:5, 5:4, 9:16, 16:9, 21:9
   -s, --size SIZE     Resolution: 1K, 2K, 4K
   --search            Enable Google Search grounding
+  --pro               Force Nano Banana Pro model
   -v, --verbose       Show detailed output
   --json              Output result as JSON
   --no-ssl-verify     Disable SSL certificate verification

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Batch image generation using Nano Banana Pro (Gemini 3 Pro Image).
+Batch image generation using Nano Banana (auto-selects Pro or 2 based on complexity).
 
 Usage:
     python batch_generate.py "pixel art logo" -n 20 -d ./logos -p logo
@@ -143,7 +143,7 @@ def batch_generate(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Batch generate images using Nano Banana Pro",
+        description="Batch generate images using Nano Banana (auto-selects Pro or 2)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
