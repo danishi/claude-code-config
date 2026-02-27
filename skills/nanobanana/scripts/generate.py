@@ -50,6 +50,13 @@ MODEL_FLASH = "gemini-3.1-flash-image-preview"
 _COMPLEXITY_PROMPT_LENGTH = 100
 _COMPLEXITY_INPUT_IMAGES = 2
 
+# Keywords in prompt that trigger Nano Banana Pro
+_PRO_KEYWORDS = [
+    "高品質", "高精細", "高解像度", "プロ", "pro ",
+    "high quality", "high detail", "ultra detail", "professional",
+    "photorealistic", "hyper realistic",
+]
+
 _ssl_verification_disabled = False
 
 
@@ -158,6 +165,7 @@ def select_model(
     input_paths: list[str] | None = None,
     image_size: str | None = None,
     use_search: bool = False,
+    force_pro: bool = False,
 ) -> str:
     """Select the best model based on prompt complexity.
 
@@ -165,6 +173,8 @@ def select_model(
     simple ones.  The NANOBANANA_MODEL env var overrides auto-selection.
 
     Complexity criteria (any one triggers Pro):
+      - ``force_pro`` flag (--pro CLI option)
+      - Prompt contains quality keywords (e.g. "高品質", "professional")
       - Prompt longer than 100 characters
       - 2 or more input images
       - 4K resolution requested
@@ -174,13 +184,18 @@ def select_model(
     if override:
         return override
 
+    if force_pro:
+        return MODEL_PRO
+
     num_inputs = len(input_paths) if input_paths else 0
+    prompt_lower = prompt.lower()
 
     is_complex = (
         len(prompt) >= _COMPLEXITY_PROMPT_LENGTH
         or num_inputs >= _COMPLEXITY_INPUT_IMAGES
         or (image_size and image_size.upper() == "4K")
         or use_search
+        or any(kw in prompt_lower for kw in _PRO_KEYWORDS)
     )
 
     return MODEL_PRO if is_complex else MODEL_FLASH
@@ -221,6 +236,7 @@ def generate_image(
     aspect_ratio: str | None = None,
     image_size: str | None = None,
     use_search: bool = False,
+    force_pro: bool = False,
     verbose: bool = False,
     no_ssl_verify: bool = False,
 ) -> dict:
@@ -233,6 +249,7 @@ def generate_image(
         aspect_ratio:   Aspect ratio (e.g. "1:1", "16:9").
         image_size:     Resolution: "1K", "2K", or "4K".
         use_search:     Enable Google Search grounding.
+        force_pro:      Force Nano Banana Pro model.
         verbose:        Print progress information.
         no_ssl_verify:  Disable SSL certificate verification.
 
@@ -246,6 +263,7 @@ def generate_image(
         input_paths=input_paths,
         image_size=image_size,
         use_search=use_search,
+        force_pro=force_pro,
     )
 
     if output_path is None:
@@ -418,6 +436,10 @@ Examples:
         help="Enable Google Search grounding for real-world accuracy",
     )
     parser.add_argument(
+        "--pro", action="store_true",
+        help="Force Nano Banana Pro model regardless of auto-selection",
+    )
+    parser.add_argument(
         "-v", "--verbose", action="store_true",
         help="Show detailed output",
     )
@@ -439,6 +461,7 @@ Examples:
         aspect_ratio=args.ratio,
         image_size=args.size.upper() if args.size else None,
         use_search=args.search,
+        force_pro=args.pro,
         verbose=args.verbose or (args.output is None and not args.json_output),
         no_ssl_verify=args.no_ssl_verify,
     )
