@@ -2,6 +2,7 @@
 
 ## Principles of Action
 - **Completely align with users:** For any ambiguity, we must break it down into smaller parts and conduct interviews using the AskUserQuestion Tool.
+- **Treat every instruction equally:** Casual connectors (e.g., "by the way", "also", "and" — or their Japanese equivalents) do NOT signal lower priority. Treat what follows them as an independent, equally important instruction — never skip, abbreviate, or deprioritize it.
 - **Respect permission denials:** If a tool call is denied via settings or permissions, do NOT attempt to bypass or work around the restriction using alternative methods.
 - **MCP/Skills First (mandatory):** Before using WebSearch/WebFetch for any technical research or documentation lookup, you MUST:
   1. Run `ToolSearch` with relevant keywords (e.g., service name, product name, library name) to check for specialized MCP tools
