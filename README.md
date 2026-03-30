@@ -232,6 +232,7 @@ This repository also serves as a reference for Claude Code project configuration
 
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
 - [Claude Code Action](https://github.com/anthropics/claude-code-action)
+- [Agent Plugins for AWS](https://github.com/awslabs/agent-plugins/tree/main)
 - [Databricks AI Dev Kit Skills](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills)
 
 ## License
