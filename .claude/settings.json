@@ -11,7 +11,7 @@
       "NotebookEdit",
       "Bash(*)",
       "WebSearch",
-      "WebFetch(domain:*)",
+      "WebFetch",
       "Skill(*)",
       "mcp__aws-knowledge__aws___*",
       "mcp__google-developer-knowledge__*",
