@@ -62,7 +62,7 @@
       "Write(/sys/*)",
       "Write(/proc/*)"
     ],
-    "defaultMode": "auto"
+    "defaultMode": "acceptEdits"
   },
   "statusLine": {
     "type": "command",
