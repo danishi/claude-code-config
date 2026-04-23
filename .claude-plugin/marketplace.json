@@ -29,6 +29,12 @@
       "description": "Search and recommend izakaya and restaurants based on party size, budget, and area. Aggregates reviews from Tabelog, Hot Pepper, and Google Maps with composite ratings and reservation links.",
       "source": "./skills/izakaya-search",
       "category": "lifestyle"
+    },
+    {
+      "name": "skill-packager",
+      "description": "Package a skill directory into a distributable .skill archive placed on the Desktop. Zips ~/.claude/skills/<skill-name>/ into ~/Desktop/<skill-name>.skill, ready for sharing or installation via Claude Desktop.",
+      "source": "./skills/skill-packager",
+      "category": "productivity"
     }
   ]
 }
