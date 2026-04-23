@@ -1,0 +1,24 @@
+{
+  "name": "skill-packager",
+  "version": "1.0.0",
+  "description": "Package a skill directory into a distributable .skill archive placed on the Desktop. Zips ~/.claude/skills/<skill-name>/ into ~/Desktop/<skill-name>.skill, ready for sharing or installation via Claude Desktop.",
+  "author": {
+    "name": "danishi"
+  },
+  "homepage": "https://github.com/danishi/claude-code-config/tree/main/skills/skill-packager",
+  "repository": "https://github.com/danishi/claude-code-config",
+  "license": "MIT",
+  "keywords": [
+    "skill",
+    "package",
+    "packager",
+    "bundle",
+    "zip",
+    "export",
+    "distribute",
+    "claude desktop"
+  ],
+  "skills": [
+    "./SKILL.md"
+  ]
+}

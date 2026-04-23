@@ -22,12 +22,13 @@ Personal repository for managing Claude Code settings, plugins, and development 
 │   └── pdf-editor/            # PDF manipulation plugin
 └── skills/
     ├── nanobanana/            # AI image generation skill
-    └── izakaya-search/        # Japanese restaurant search skill
+    ├── izakaya-search/        # Japanese restaurant search skill
+    └── skill-packager/        # Skill packaging utility
 ```
 
 ## Plugins & Skills
 
-This repository provides four plugins via the Claude Code marketplace:
+This repository provides five plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -71,6 +72,16 @@ Search and recommend izakaya and restaurants for group dining:
 - **Fake Review Detection** - Detects and penalizes suspected sakura reviews on Google Maps
 - **Quick Booking** - Provides reservation links, course info, and Google Maps directions
 - **Search Reference** - Built-in query templates by occasion, cuisine, and features
+
+### skill-packager Skill
+
+Package a skill directory into a distributable `.skill` archive:
+
+- **One-shot Packaging** - Zips `~/.claude/skills/<skill-name>/` into `~/Desktop/<skill-name>.skill`
+- **Pre-flight Inspection** - Lists every file to be included so users can spot credentials, large binaries, or local-only configs before shipping
+- **Cache Exclusion** - Automatically excludes `__pycache__/`, `*.pyc`, and `.DS_Store`
+- **ASCII-safe Check** - Reminds users to rename non-ASCII filenames (Claude Desktop rejects them)
+- **Size Verification** - Reports the final archive path and size for sanity checking
 
 ## MCP Servers
 
@@ -132,6 +143,7 @@ claude plugin install danishi
 claude plugin install pdf-editor
 claude plugin install nanobanana
 claude plugin install izakaya-search
+claude plugin install skill-packager
 ```
 
 ### Installing Skills Directly
@@ -142,6 +154,7 @@ You can also install individual skills using the `npx skills` command:
 npx skills add danishi/claude-code-config --skill nanobanana
 npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
+npx skills add danishi/claude-code-config --skill skill-packager
 ```
 
 ## Usage
@@ -218,6 +231,18 @@ See [skills/nanobanana/SKILL.md](skills/nanobanana/SKILL.md) for full documentat
 Claude will interactively ask about area, party size, budget, and preferences, then search multiple gourmet sites and present restaurant recommendations with composite ratings and reservation links.
 
 See [skills/izakaya-search/SKILL.md](skills/izakaya-search/SKILL.md) for full documentation and options.
+
+### skill-packager Skill
+
+**Trigger with natural language:**
+```
+"Package the nanobanana skill into a .skill file"
+"Bundle my izakaya-search skill for distribution"
+```
+
+Claude will list the files to be included, exclude caches and OS metadata, and create `~/Desktop/<skill-name>.skill`. The resulting archive is ready to share or install via Claude Desktop.
+
+See [skills/skill-packager/SKILL.md](skills/skill-packager/SKILL.md) for full documentation and options.
 
 ## Project Settings
 
