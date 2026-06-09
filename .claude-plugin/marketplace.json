@@ -25,6 +25,12 @@
       "category": "ai-tools"
     },
     {
+      "name": "lyria",
+      "description": "Generate music files using Google Gemini Lyria 3. Auto-selects the model by request/purpose: Lyria 3 Pro for full-length structured songs with lyrics, Lyria 3 Clip for 30s clips, loops, and jingles. Supports genre/mood/instrument prompting, song-structure tags, and MP3/WAV output.",
+      "source": "./skills/lyria",
+      "category": "ai-tools"
+    },
+    {
       "name": "izakaya-search",
       "description": "Search and recommend izakaya and restaurants based on party size, budget, and area. Aggregates reviews from Tabelog, Hot Pepper, and Google Maps with composite ratings and reservation links.",
       "source": "./skills/izakaya-search",

@@ -1,0 +1,27 @@
+{
+  "name": "lyria",
+  "version": "1.0.0",
+  "description": "Generate music files using Google Gemini Lyria 3. Auto-selects the model by request/purpose: Lyria 3 Pro for full-length structured songs with lyrics, Lyria 3 Clip for 30s clips, loops, and jingles. Supports genre/mood/instrument prompting, song-structure tags, MP3/WAV output. Works with Gemini Developer API and Vertex AI.",
+  "author": {
+    "name": "danishi"
+  },
+  "homepage": "https://github.com/danishi/claude-code-config/tree/main/skills/lyria",
+  "repository": "https://github.com/danishi/claude-code-config",
+  "license": "MIT",
+  "keywords": [
+    "generate music",
+    "create music",
+    "lyria",
+    "lyria 3",
+    "gemini music",
+    "AI music",
+    "song generation",
+    "music generation"
+  ],
+  "skills": [
+    "./SKILL.md"
+  ],
+  "commands": [
+    "./scripts/"
+  ]
+}

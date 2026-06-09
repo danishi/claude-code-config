@@ -22,13 +22,14 @@ Personal repository for managing Claude Code settings, plugins, and development 
 │   └── pdf-editor/            # PDF manipulation plugin
 └── skills/
     ├── nanobanana/            # AI image generation skill
+    ├── lyria/                 # AI music generation skill
     ├── izakaya-search/        # Japanese restaurant search skill
     └── skill-packager/        # Skill packaging utility
 ```
 
 ## Plugins & Skills
 
-This repository provides five plugins via the Claude Code marketplace:
+This repository provides six plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -61,6 +62,17 @@ AI image generation using Google Gemini (Nano Banana Pro / Nano Banana 2):
 - **High Resolution** - Standard, 2K, and 4K output
 - **Batch Generation** - Generate multiple images with parallel execution support
 - **Prompt Reference** - Built-in prompt templates and best practices
+
+### lyria Skill
+
+AI music generation using Google Gemini Lyria 3:
+
+- **Auto Model Selection** - Picks Lyria 3 Pro or Clip based on the request / purpose
+- **Lyria 3 Pro** - Full-length songs (≈ a couple of minutes) with verses, choruses, bridges, and lyrics
+- **Lyria 3 Clip** - 30-second clips, loops, jingles, and quick previews (fast iteration)
+- **Rich Prompting** - Genre, mood, instruments, tempo, vocals, and song-structure tags
+- **Output Formats** - MP3 (default) and WAV (Pro), 48 kHz stereo
+- **Prompt Reference** - Built-in prompt templates by genre and song structure
 
 ### izakaya-search Skill
 
@@ -142,6 +154,7 @@ Install a specific plugin:
 claude plugin install danishi
 claude plugin install pdf-editor
 claude plugin install nanobanana
+claude plugin install lyria
 claude plugin install izakaya-search
 claude plugin install skill-packager
 ```
@@ -152,6 +165,7 @@ You can also install individual skills using the `npx skills` command:
 
 ```bash
 npx skills add danishi/claude-code-config --skill nanobanana
+npx skills add danishi/claude-code-config --skill lyria
 npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
 npx skills add danishi/claude-code-config --skill skill-packager
@@ -220,6 +234,31 @@ python3 <skill_dir>/scripts/batch_generate.py "pixel art logo" -n 20 -d ./logos 
 ```
 
 See [skills/nanobanana/SKILL.md](skills/nanobanana/SKILL.md) for full documentation and options.
+
+### lyria Skill
+
+**Prerequisites:**
+```bash
+pip install google-genai
+export GEMINI_API_KEY="your-api-key"  # Get from https://aistudio.google.com/apikey
+```
+
+**Generate music (auto-selects model):**
+```bash
+python3 <skill_dir>/scripts/generate.py "lofi hip hop, mellow piano, rainy night" -o track.mp3
+```
+
+**Force a short clip (loops / jingles):**
+```bash
+python3 <skill_dir>/scripts/generate.py "upbeat synthwave jingle, 80s, short loop" --clip -o jingle.mp3
+```
+
+**Force a full-length song (with structure tags and lyrics):**
+```bash
+python3 <skill_dir>/scripts/generate.py "[Verse] city lights fade [Chorus] we are still alive, full pop ballad" --pro -o song.mp3
+```
+
+See [skills/lyria/SKILL.md](skills/lyria/SKILL.md) for full documentation and options.
 
 ### izakaya-search Skill
 
