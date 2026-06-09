@@ -92,6 +92,14 @@ Following the approved plan, call each sibling skill and place output under
 `<project-dir>/public/{images,video,audio}/`. Exact commands and timing tips are
 in `references/asset-pipeline.md`. Keep a consistent visual style across images.
 
+> **BGM lives only in the lyria layer.** Veo clips keep their native audio (SE,
+> ambience, dialogue) playing on the timeline, so when generating veo clips you
+> must **always suppress embedded music** — pass
+> `--negative-prompt "background music, soundtrack, musical score, BGM"` and
+> never ask for music in the prompt. Otherwise a clip's own BGM would clash with
+> the global lyria BGM. SE/ambience are kept; only music is suppressed. Details:
+> `references/asset-pipeline.md` → "Never let veo clips carry their own BGM".
+
 ### Step 5 — Author the timeline (props.json)
 
 Copy `props.sample.json` → `props.json` and fill in the scenes: reference assets
@@ -172,3 +180,6 @@ suggested next steps.
 - **Prefer this repo's skills**; when one is missing, prompt installation or use
   a documented fallback — and make the trade-off visible in the plan.
 - **Fix cheap before expensive** — edit props before regenerating assets.
+- **One BGM bed only** — music belongs to the lyria layer; always generate veo
+  clips with music suppressed (negative prompt) so clip-embedded BGM can't clash
+  with the global BGM. Keep the clips' SE/ambience.

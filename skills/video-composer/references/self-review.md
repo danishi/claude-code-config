@@ -40,6 +40,11 @@ python scripts/render_video.py --project <dir> --props <dir>/props.json \
 ### Audio (reason from props + a scrub if needed)
 - [ ] **Narration fits** — voiceover finishes within its scene (+ small tail).
 - [ ] **BGM balance** — music volume low enough (~0.2) under narration.
+- [ ] **No clashing BGM** — veo clips carry no embedded background music that
+      fights the global lyria BGM. Scrub any video scene: SE/ambience/dialogue is
+      fine, but if you hear a second musical bed, regenerate that clip with music
+      suppressed (`--negative-prompt "background music, soundtrack, …"`) — do NOT
+      mute the clip, which would also remove its SE.
 - [ ] **Sync** — captions appear while the matching narration plays.
 
 ### Requirements

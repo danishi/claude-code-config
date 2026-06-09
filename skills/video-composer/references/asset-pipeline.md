@@ -39,12 +39,37 @@ python <nanobanana>/scripts/generate.py \
 ```bash
 python <veo>/scripts/generate.py \
   "slow dolly-in over the forest canopy, golden light" \
-  --ratio 16:9 --duration 6 -o <project>/public/video/scene2.mp4
+  --ratio 16:9 --duration 6 \
+  --negative-prompt "background music, soundtrack, musical score, BGM" \
+  -o <project>/public/video/scene2.mp4
 ```
 
 - Defaults to the cost-effective Veo 3.1 Lite model (add `--pro` only if asked).
 - Veo clips are 4-8s; size each scene's `durationInFrames` to the clip length
   (`seconds * fps`).
+
+### ⚠️ Never let veo clips carry their own BGM (music goes only in the lyria layer)
+
+Veo 3.1 generates native audio, and left unguided it may **bake background music
+into the clip**. The clip's audio track keeps playing on the timeline
+(`<OffthreadVideo>`), so any embedded music would stack on top of the global
+lyria BGM and the two soundtracks would clash. To keep a single, coherent music
+bed, **always suppress music when generating veo clips** — regardless of whether
+this video has BGM:
+
+- **Always pass** `--negative-prompt "background music, soundtrack, musical score, BGM"`
+  (merge with any other negatives you need).
+- **Do not request music** in the positive prompt — describe motion, camera,
+  setting, lighting, and **diegetic sound only** (e.g. "wind through leaves",
+  "footsteps on gravel", "ambient city hum"). Avoid words like "music",
+  "song", "score", "soundtrack".
+- **Keep sound effects / ambience / dialogue.** SE and environmental audio are
+  wanted — do **not** mute the clip. Suppression is music-only, done at
+  generation time via the prompt; the timeline plays the clip's audio as-is
+  (the music suppression is what keeps it from fighting the BGM).
+- Audio is generative, so suppression is best-effort. If a delivered clip still
+  has audible music, regenerate it (tweak the prompt / add a `--seed`) rather
+  than muting the whole track, which would also kill the SE.
 
 ## 3. Background music (lyria)
 
