@@ -129,7 +129,7 @@ python scripts/generate.py "ocean waves" --json -o waves.mp4
 usage: generate.py [-h] [-o OUTPUT] [-i IMAGE] [--last-frame PATH]
                    [-r {16:9,9:16}] [--resolution {720p,1080p,4k}]
                    [-d DURATION] [-n COUNT]
-                   [--person-generation {dont_allow,allow_adult,allow_all}]
+                   [--person-generation {auto,dont_allow,allow_adult,allow_all}]
                    [--negative-prompt TEXT] [--seed SEED] [--pro] [--fast]
                    [--poll-interval SECS] [--timeout SECS] [-v] [--json]
                    [--no-ssl-verify] prompt
@@ -145,7 +145,9 @@ Options:
   --resolution RES        720p, 1080p, or 4k (4k requires --pro)
   -d, --duration SECS     Clip duration in seconds (default: 8)
   -n, --count N           Number of videos, 1-4 (default: 1)
-  --person-generation P   dont_allow / allow_adult / allow_all (default: allow_adult)
+  --person-generation P   auto / dont_allow / allow_adult / allow_all
+                          (default: auto = allow_all on Gemini Developer API,
+                          allow_adult on Vertex AI)
   --negative-prompt TEXT  Things to avoid in the video
   --seed SEED             Seed for improved consistency
   --pro                   Use the premium Veo 3.1 model (explicit)
@@ -174,6 +176,21 @@ Notes:
 - **1080p** typically requires an **8-second** duration.
 - **4k** is **not** available on Lite — use `--pro`.
 
+### Person generation policy
+
+The `--person-generation` policy controls whether people appear in the output:
+
+| Platform | Supported values | Default (`auto`) |
+|---|---|---|
+| **Gemini Developer API** (`GEMINI_API_KEY`) | **`allow_all` only** — `dont_allow` / `allow_adult` are currently **rejected** | `allow_all` |
+| **Vertex AI** (`GOOGLE_CLOUD_PROJECT`) | `dont_allow`, `allow_adult`, `allow_all` | `allow_adult` |
+
+- The default is **`auto`**, which picks a platform-safe value automatically.
+- As a safety net, if the API rejects the chosen value with a
+  `personGeneration ... not supported` error, the script **automatically
+  retries once with `allow_all`** — so a single run succeeds without manual
+  intervention.
+
 ---
 
 ## Prompting Tips
@@ -201,6 +218,7 @@ See `references/prompts.md` for category-specific templates.
 | `No API credentials found` | Set `GEMINI_API_KEY` or `GOOGLE_CLOUD_PROJECT` |
 | `Veo 3.1 Lite does not support 4k` | Use `--pro` for 4k, or pick 720p/1080p |
 | `No videos were generated` | Rephrase the prompt; it may have been blocked |
+| `personGeneration is currently not supported` | The Gemini Developer API only supports `allow_all`. The script auto-retries with `allow_all`; or pass `--person-generation allow_all` explicitly |
 | `Content blocked by safety filters` | Rephrase; check `--person-generation` policy |
 | `Timed out ... waiting` | Increase `--timeout` or omit it (no limit) |
 | `API rate limit reached` | Wait and retry |

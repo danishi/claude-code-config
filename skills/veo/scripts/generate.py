@@ -57,7 +57,8 @@ MODEL_FAST = "veo-3.1-fast-generate-preview"
 
 VALID_ASPECT_RATIOS = ["16:9", "9:16"]
 VALID_RESOLUTIONS = ["720p", "1080p", "4k"]
-VALID_PERSON_GENERATION = ["dont_allow", "allow_adult", "allow_all"]
+# "auto" resolves per platform (see resolve_person_generation).
+VALID_PERSON_GENERATION = ["auto", "dont_allow", "allow_adult", "allow_all"]
 
 _ssl_verification_disabled = False
 
@@ -176,6 +177,25 @@ def select_model(force_pro: bool = False, force_fast: bool = False) -> str:
     return MODEL_LITE
 
 
+def _is_vertex() -> bool:
+    """Return True if the Vertex AI platform will be used (GOOGLE_CLOUD_PROJECT set)."""
+    return bool(os.environ.get("GOOGLE_CLOUD_PROJECT"))
+
+
+def resolve_person_generation(value: str | None) -> str:
+    """Resolve the person_generation policy, picking a platform-safe default.
+
+    The Gemini Developer API currently only supports ``allow_all`` for Veo;
+    ``dont_allow`` / ``allow_adult`` are rejected.  Vertex AI supports the full
+    range.  When ``value`` is None or "auto", choose:
+        - Vertex AI            -> "allow_adult"
+        - Gemini Developer API -> "allow_all"
+    """
+    if value and value != "auto":
+        return value
+    return "allow_adult" if _is_vertex() else "allow_all"
+
+
 def load_image(path: str) -> "types.Image":
     """Load an image file into a types.Image."""
     p = Path(path)
@@ -219,7 +239,7 @@ def generate_video(
     resolution: str = "720p",
     duration_seconds: int = 8,
     number_of_videos: int = 1,
-    person_generation: str = "allow_adult",
+    person_generation: str = "auto",
     negative_prompt: str | None = None,
     seed: int | None = None,
     force_pro: bool = False,
@@ -240,7 +260,9 @@ def generate_video(
         resolution:        "720p", "1080p", or "4k" (4k: Pro only).
         duration_seconds:  Clip length in seconds.
         number_of_videos:  Number of videos (1-4).
-        person_generation: "dont_allow" / "allow_adult" / "allow_all".
+        person_generation: "auto" / "dont_allow" / "allow_adult" / "allow_all".
+                           "auto" picks allow_all on the Gemini Developer API
+                           and allow_adult on Vertex AI.
         negative_prompt:   Optional things to avoid.
         seed:              Optional seed for consistency.
         force_pro:         Use the premium Veo 3.1 model (explicit).
@@ -276,39 +298,45 @@ def generate_video(
             file=sys.stderr,
         )
 
-    # Build config
-    config_kwargs: dict = {
+    # Resolve a platform-safe person_generation policy. The Gemini Developer
+    # API currently only accepts allow_all for Veo.
+    person_generation = resolve_person_generation(person_generation)
+
+    # Build config (person_generation may be swapped on retry; see below).
+    base_config_kwargs: dict = {
         "aspect_ratio": aspect_ratio,
         "resolution": resolution,
         "duration_seconds": duration_seconds,
         "number_of_videos": number_of_videos,
-        "person_generation": person_generation,
     }
     if negative_prompt:
-        config_kwargs["negative_prompt"] = negative_prompt
+        base_config_kwargs["negative_prompt"] = negative_prompt
     if seed is not None:
-        config_kwargs["seed"] = seed
+        base_config_kwargs["seed"] = seed
 
     start_image = None
     if image_path:
         start_image = load_image(image_path)
     if last_frame_path:
-        config_kwargs["last_frame"] = load_image(last_frame_path)
-
-    video_config = types.GenerateVideosConfig(**config_kwargs)
+        base_config_kwargs["last_frame"] = load_image(last_frame_path)
 
     if verbose:
         print(f"Model: {model}")
         print(f"Prompt: {prompt}")
         print(f"Aspect ratio: {aspect_ratio}, Resolution: {resolution}, "
               f"Duration: {duration_seconds}s, Count: {number_of_videos}")
+        print(f"Person generation: {person_generation}")
         if image_path:
             print(f"Start frame: {image_path}")
         if last_frame_path:
             print(f"Last frame: {last_frame_path}")
         print("Submitting generation request...")
 
-    try:
+    def _submit(person_gen: str):
+        """Submit the generation request with the given person_generation policy."""
+        video_config = types.GenerateVideosConfig(
+            person_generation=person_gen, **base_config_kwargs
+        )
         gen_kwargs: dict = {
             "model": model,
             "prompt": prompt,
@@ -316,8 +344,32 @@ def generate_video(
         }
         if start_image is not None:
             gen_kwargs["image"] = start_image
+        return client.models.generate_videos(**gen_kwargs)
 
-        operation = client.models.generate_videos(**gen_kwargs)
+    def _is_person_generation_unsupported(err: Exception) -> bool:
+        """Detect the 'personGeneration is currently not supported' error."""
+        msg = str(err).lower()
+        return "persongeneration" in msg and (
+            "not supported" in msg or "not currently supported" in msg
+        )
+
+    try:
+        try:
+            operation = _submit(person_generation)
+        except Exception as e:
+            # The Gemini Developer API rejects dont_allow / allow_adult for Veo;
+            # transparently retry once with allow_all so the user succeeds in
+            # a single run.
+            if person_generation != "allow_all" and _is_person_generation_unsupported(e):
+                if verbose:
+                    print(
+                        f"  person_generation='{person_generation}' not supported "
+                        "on this API; retrying with 'allow_all'..."
+                    )
+                person_generation = "allow_all"
+                operation = _submit(person_generation)
+            else:
+                raise
 
         # Poll the long-running operation until completion.
         waited = 0.0
@@ -445,8 +497,9 @@ Models (default is the cheapest; Pro/Fast are opt-in only):
     )
     parser.add_argument(
         "--person-generation", dest="person_generation",
-        default="allow_adult", choices=VALID_PERSON_GENERATION,
-        help="Person generation policy (default: allow_adult)",
+        default="auto", choices=VALID_PERSON_GENERATION,
+        help="Person generation policy (default: auto = allow_all on Gemini "
+             "Developer API, allow_adult on Vertex AI)",
     )
     parser.add_argument("--negative-prompt", dest="negative_prompt", help="Things to avoid")
     parser.add_argument("--seed", type=int, help="Seed for consistency")
