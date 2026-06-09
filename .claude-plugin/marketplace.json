@@ -43,6 +43,12 @@
       "category": "ai-tools"
     },
     {
+      "name": "video-composer",
+      "description": "Produce rich, finished video content with React Remotion by orchestrating the repository's media skills (nanobanana images, veo video, lyria BGM, gemini-tts narration) on a data-driven timeline. Approval-gated: returns a composition plan for approval, generates assets, composes, runs a multimodal self-review loop, and delivers only when the result meets the bar.",
+      "source": "./skills/video-composer",
+      "category": "ai-tools"
+    },
+    {
       "name": "izakaya-search",
       "description": "Search and recommend izakaya and restaurants based on party size, budget, and area. Aggregates reviews from Tabelog, Hot Pepper, and Google Maps with composite ratings and reservation links.",
       "source": "./skills/izakaya-search",

@@ -25,13 +25,14 @@ Personal repository for managing Claude Code settings, plugins, and development 
     ├── lyria/                 # AI music generation skill
     ├── gemini-tts/            # AI text-to-speech (read-aloud) skill
     ├── veo/                   # AI video generation skill
+    ├── video-composer/        # Remotion video orchestration skill
     ├── izakaya-search/        # Japanese restaurant search skill
     └── skill-packager/        # Skill packaging utility
 ```
 
 ## Plugins & Skills
 
-This repository provides eight plugins via the Claude Code marketplace:
+This repository provides nine plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -99,6 +100,16 @@ AI video generation using Google Gemini Veo 3.1:
 - **Batch** - Generate 1-4 video variations per request
 - **Async Handling** - Submits the long-running job and polls until the `.mp4` is ready
 - **Prompt Reference** - Built-in camera-movement vocabulary and prompt templates
+
+### video-composer Skill
+
+Orchestrated rich video production with React Remotion, combining the other media skills:
+
+- **Skill Orchestration** - Drives nanobanana (images), veo (clips), lyria (BGM), and gemini-tts (narration) on one timeline
+- **Approval Gate** - Returns a scene-by-scene composition plan and waits for approval before generating anything
+- **Data-driven Remotion** - Scaffolds a fresh TypeScript Remotion project whose timeline is described entirely by `props.json` (scenes, Ken Burns, captions, transitions, voiceover, BGM)
+- **Multimodal Self-Review** - Renders, extracts still frames, visually inspects them against a rubric, and iterates autonomously until the quality bar is met
+- **Graceful Degradation** - Detects missing sibling skills and prompts installation (for standalone installs) or falls back to documented alternatives
 
 ### izakaya-search Skill
 
@@ -183,6 +194,7 @@ claude plugin install nanobanana
 claude plugin install lyria
 claude plugin install gemini-tts
 claude plugin install veo
+claude plugin install video-composer
 claude plugin install izakaya-search
 claude plugin install skill-packager
 ```
@@ -196,6 +208,7 @@ npx skills add danishi/claude-code-config --skill nanobanana
 npx skills add danishi/claude-code-config --skill lyria
 npx skills add danishi/claude-code-config --skill gemini-tts
 npx skills add danishi/claude-code-config --skill veo
+npx skills add danishi/claude-code-config --skill video-composer
 npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
 npx skills add danishi/claude-code-config --skill skill-packager
@@ -339,6 +352,31 @@ python3 <skill_dir>/scripts/generate.py "epic drone shot over mountains" --pro -
 ```
 
 See [skills/veo/SKILL.md](skills/veo/SKILL.md) for full documentation and options.
+
+### video-composer Skill
+
+**Prerequisites:**
+```bash
+# Node.js >= 18 (Remotion bundles its own ffmpeg)
+node -v
+# Sibling media skills + API access (GEMINI_API_KEY or Vertex AI)
+export GEMINI_API_KEY="your-api-key"
+```
+
+**Trigger with natural language:**
+```
+"Create a 30-second 16:9 promo video about our new app, with narration and upbeat BGM"
+"Make a vertical social clip from these three points"
+```
+
+The skill first checks that the sibling skills (nanobanana / veo / lyria / gemini-tts) are installed (and prompts to install any that are missing), then returns a scene-by-scene composition plan for your approval. After approval it generates the assets, composes them in a scaffolded Remotion project, runs a multimodal self-review loop, and delivers the finished `.mp4`.
+
+```bash
+# Check sibling skill availability
+python3 <skill_dir>/scripts/check_skills.py
+```
+
+See [skills/video-composer/SKILL.md](skills/video-composer/SKILL.md) for full documentation and the workflow.
 
 ### izakaya-search Skill
 
