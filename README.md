@@ -24,13 +24,14 @@ Personal repository for managing Claude Code settings, plugins, and development 
     ├── nanobanana/            # AI image generation skill
     ├── lyria/                 # AI music generation skill
     ├── gemini-tts/            # AI text-to-speech (read-aloud) skill
+    ├── veo/                   # AI video generation skill
     ├── izakaya-search/        # Japanese restaurant search skill
     └── skill-packager/        # Skill packaging utility
 ```
 
 ## Plugins & Skills
 
-This repository provides seven plugins via the Claude Code marketplace:
+This repository provides eight plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -86,6 +87,18 @@ AI text-to-speech (read-aloud) using Google Gemini TTS (`gemini-3.1-flash-tts-pr
 - **Flexible Input** - Read from a command argument or a text file (`-f`)
 - **WAV Output** - 16-bit, 24 kHz mono WAV (PCM auto-wrapped)
 - **Voice Reference** - Built-in voice list and style / audio-tag guide
+
+### veo Skill
+
+AI video generation using Google Gemini Veo 3.1:
+
+- **Cost-First Default** - Uses the cost-effective Veo 3.1 Lite model unless `--pro` / `--fast` is explicitly given
+- **Text-to-Video** - Generate clips from a text prompt
+- **Image-to-Video** - Animate a starting frame, with an optional last-frame constraint
+- **Cinematic Control** - Aspect ratio (16:9 / 9:16), resolution (720p / 1080p, 4k on Pro), 4-8s duration
+- **Batch** - Generate 1-4 video variations per request
+- **Async Handling** - Submits the long-running job and polls until the `.mp4` is ready
+- **Prompt Reference** - Built-in camera-movement vocabulary and prompt templates
 
 ### izakaya-search Skill
 
@@ -169,6 +182,7 @@ claude plugin install pdf-editor
 claude plugin install nanobanana
 claude plugin install lyria
 claude plugin install gemini-tts
+claude plugin install veo
 claude plugin install izakaya-search
 claude plugin install skill-packager
 ```
@@ -181,6 +195,7 @@ You can also install individual skills using the `npx skills` command:
 npx skills add danishi/claude-code-config --skill nanobanana
 npx skills add danishi/claude-code-config --skill lyria
 npx skills add danishi/claude-code-config --skill gemini-tts
+npx skills add danishi/claude-code-config --skill veo
 npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
 npx skills add danishi/claude-code-config --skill skill-packager
@@ -299,6 +314,31 @@ python3 <skill_dir>/scripts/generate.py -f dialogue.txt --speaker "Taro:Kore" --
 ```
 
 See [skills/gemini-tts/SKILL.md](skills/gemini-tts/SKILL.md) for full documentation and options.
+
+### veo Skill
+
+**Prerequisites:**
+```bash
+pip install google-genai
+export GEMINI_API_KEY="your-api-key"  # Get from https://aistudio.google.com/apikey
+```
+
+**Generate a video (cost-effective Lite model by default):**
+```bash
+python3 <skill_dir>/scripts/generate.py "a cat surfing a wave, cinematic lighting" -o cat.mp4
+```
+
+**Animate an image (image-to-video):**
+```bash
+python3 <skill_dir>/scripts/generate.py "gentle breeze, leaves drifting" -i start.jpg -o anim.mp4
+```
+
+**Use the premium model explicitly (1080p):**
+```bash
+python3 <skill_dir>/scripts/generate.py "epic drone shot over mountains" --pro --resolution 1080p -o drone.mp4
+```
+
+See [skills/veo/SKILL.md](skills/veo/SKILL.md) for full documentation and options.
 
 ### izakaya-search Skill
 

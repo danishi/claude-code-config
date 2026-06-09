@@ -37,6 +37,12 @@
       "category": "ai-tools"
     },
     {
+      "name": "veo",
+      "description": "Generate videos using Google Gemini Veo 3.1. Defaults to the cost-effective Veo 3.1 Lite model; the premium (Veo 3.1) and Fast models are opt-in via --pro/--fast. Supports text-to-video and image-to-video (first/last frame), 16:9 / 9:16, 720p/1080p (4k on Pro), 4-8s clips, and 1-4 videos per request.",
+      "source": "./skills/veo",
+      "category": "ai-tools"
+    },
+    {
       "name": "izakaya-search",
       "description": "Search and recommend izakaya and restaurants based on party size, budget, and area. Aggregates reviews from Tabelog, Hot Pepper, and Google Maps with composite ratings and reservation links.",
       "source": "./skills/izakaya-search",
