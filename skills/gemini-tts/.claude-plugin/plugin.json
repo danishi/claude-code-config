@@ -1,0 +1,27 @@
+{
+  "name": "gemini-tts",
+  "version": "1.0.0",
+  "description": "Generate read-aloud audio (text-to-speech) using Google Gemini TTS (gemini-3.1-flash-tts-preview). Auto-detects single-speaker narration vs 2-person multi-speaker dialogue from the input. Supports 30 prebuilt voices, natural-language style control and audio tags, text or file input, and WAV output. Works with Gemini Developer API and Vertex AI.",
+  "author": {
+    "name": "danishi"
+  },
+  "homepage": "https://github.com/danishi/claude-code-config/tree/main/skills/gemini-tts",
+  "repository": "https://github.com/danishi/claude-code-config",
+  "license": "MIT",
+  "keywords": [
+    "text to speech",
+    "tts",
+    "read aloud",
+    "narration",
+    "gemini tts",
+    "AI voice",
+    "speech generation",
+    "multi-speaker"
+  ],
+  "skills": [
+    "./SKILL.md"
+  ],
+  "commands": [
+    "./scripts/"
+  ]
+}

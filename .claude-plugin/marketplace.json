@@ -31,6 +31,12 @@
       "category": "ai-tools"
     },
     {
+      "name": "gemini-tts",
+      "description": "Generate read-aloud audio (text-to-speech) using Google Gemini TTS (gemini-3.1-flash-tts-preview). Auto-detects single-speaker narration vs 2-person multi-speaker dialogue from the input. Supports 30 prebuilt voices, natural-language style control and audio tags, text or file input, and WAV output.",
+      "source": "./skills/gemini-tts",
+      "category": "ai-tools"
+    },
+    {
       "name": "izakaya-search",
       "description": "Search and recommend izakaya and restaurants based on party size, budget, and area. Aggregates reviews from Tabelog, Hot Pepper, and Google Maps with composite ratings and reservation links.",
       "source": "./skills/izakaya-search",

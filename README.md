@@ -23,13 +23,14 @@ Personal repository for managing Claude Code settings, plugins, and development 
 └── skills/
     ├── nanobanana/            # AI image generation skill
     ├── lyria/                 # AI music generation skill
+    ├── gemini-tts/            # AI text-to-speech (read-aloud) skill
     ├── izakaya-search/        # Japanese restaurant search skill
     └── skill-packager/        # Skill packaging utility
 ```
 
 ## Plugins & Skills
 
-This repository provides six plugins via the Claude Code marketplace:
+This repository provides seven plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -73,6 +74,18 @@ AI music generation using Google Gemini Lyria 3:
 - **Rich Prompting** - Genre, mood, instruments, tempo, vocals, and song-structure tags
 - **Output Formats** - MP3 (default) and WAV (Pro), 48 kHz stereo
 - **Prompt Reference** - Built-in prompt templates by genre and song structure
+
+### gemini-tts Skill
+
+AI text-to-speech (read-aloud) using Google Gemini TTS (`gemini-3.1-flash-tts-preview`):
+
+- **Auto Mode Detection** - Single-speaker narration for plain text, multi-speaker for 2-person dialogue
+- **30 Prebuilt Voices** - Choose by characteristic (bright, warm, firm, youthful, etc.)
+- **Multi-speaker Dialogue** - Maps `Name:` labels to distinct voices (up to 2 speakers)
+- **Style Control** - Natural-language prefixes (`Say cheerfully:`) and 200+ inline audio tags
+- **Flexible Input** - Read from a command argument or a text file (`-f`)
+- **WAV Output** - 16-bit, 24 kHz mono WAV (PCM auto-wrapped)
+- **Voice Reference** - Built-in voice list and style / audio-tag guide
 
 ### izakaya-search Skill
 
@@ -155,6 +168,7 @@ claude plugin install danishi
 claude plugin install pdf-editor
 claude plugin install nanobanana
 claude plugin install lyria
+claude plugin install gemini-tts
 claude plugin install izakaya-search
 claude plugin install skill-packager
 ```
@@ -166,6 +180,7 @@ You can also install individual skills using the `npx skills` command:
 ```bash
 npx skills add danishi/claude-code-config --skill nanobanana
 npx skills add danishi/claude-code-config --skill lyria
+npx skills add danishi/claude-code-config --skill gemini-tts
 npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
 npx skills add danishi/claude-code-config --skill skill-packager
@@ -259,6 +274,31 @@ python3 <skill_dir>/scripts/generate.py "[Verse] city lights fade [Chorus] we ar
 ```
 
 See [skills/lyria/SKILL.md](skills/lyria/SKILL.md) for full documentation and options.
+
+### gemini-tts Skill
+
+**Prerequisites:**
+```bash
+pip install google-genai
+export GEMINI_API_KEY="your-api-key"  # Get from https://aistudio.google.com/apikey
+```
+
+**Read text aloud (single voice):**
+```bash
+python3 <skill_dir>/scripts/generate.py "Have a wonderful day!" --voice Puck -o hello.wav
+```
+
+**Read a file with a style prefix:**
+```bash
+python3 <skill_dir>/scripts/generate.py -f article.txt --style "in a calm voice" -o article.wav
+```
+
+**Multi-speaker dialogue (auto-detected from `Name:` labels):**
+```bash
+python3 <skill_dir>/scripts/generate.py -f dialogue.txt --speaker "Taro:Kore" --speaker "Hanako:Puck" -o conversation.wav
+```
+
+See [skills/gemini-tts/SKILL.md](skills/gemini-tts/SKILL.md) for full documentation and options.
 
 ### izakaya-search Skill
 
