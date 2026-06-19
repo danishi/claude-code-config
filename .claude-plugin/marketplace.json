@@ -19,6 +19,12 @@
       "category": "productivity"
     },
     {
+      "name": "codex-imagegen",
+      "description": "Generate images using Codex CLI's built-in image_gen tool. No API key required. Supports prompt-driven style, aspect ratio, negative prompts, batch generation, and JSON output.",
+      "source": "./skills/codex-imagegen",
+      "category": "ai-tools"
+    },
+    {
       "name": "nanobanana",
       "description": "Generate and edit images using Google Gemini (Nano Banana Pro / Nano Banana 2). Auto-selects model by complexity. Supports text-to-image, image editing, aspect ratios, 1K/2K/4K output, and batch generation.",
       "source": "./skills/nanobanana",

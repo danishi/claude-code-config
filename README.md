@@ -21,7 +21,8 @@ Personal repository for managing Claude Code settings, plugins, and development 
 │   ├── danishi/               # Base toolkit plugin
 │   └── pdf-editor/            # PDF manipulation plugin
 └── skills/
-    ├── nanobanana/            # AI image generation skill
+    ├── codex-imagegen/        # AI image generation skill (Codex CLI)
+    ├── nanobanana/            # AI image generation skill (Gemini)
     ├── lyria/                 # AI music generation skill
     ├── gemini-tts/            # AI text-to-speech (read-aloud) skill
     ├── veo/                   # AI video generation skill
@@ -32,7 +33,7 @@ Personal repository for managing Claude Code settings, plugins, and development 
 
 ## Plugins & Skills
 
-This repository provides nine plugins via the Claude Code marketplace:
+This repository provides ten plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -54,6 +55,17 @@ PDF page manipulation toolkit with a specialized `pdf-operator` agent:
 - **Rotate** - Rotate pages (90/180/270 degrees)
 - **Split** - Split into multiple files (per-page, ranges, or chunks)
 - **Merge** - Combine multiple PDFs into one
+
+### codex-imagegen Skill
+
+AI image generation using Codex CLI's built-in image_gen tool:
+
+- **No API Key Required** - Uses Codex's built-in image generation (no `OPENAI_API_KEY` needed)
+- **Style Control** - Specify style via `-s` (e.g. "watercolor", "anime", "photorealistic")
+- **Aspect Ratios** - 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3
+- **Negative Prompts** - Exclude unwanted elements with `--negative`
+- **Batch Generation** - Generate multiple images with `-n`
+- **JSON Output** - Machine-readable output with `--json`
 
 ### nanobanana Skill
 
@@ -190,6 +202,7 @@ Install a specific plugin:
 ```bash
 claude plugin install danishi
 claude plugin install pdf-editor
+claude plugin install codex-imagegen
 claude plugin install nanobanana
 claude plugin install lyria
 claude plugin install gemini-tts
@@ -204,6 +217,7 @@ claude plugin install skill-packager
 You can also install individual skills using the `npx skills` command:
 
 ```bash
+npx skills add danishi/claude-code-config --skill codex-imagegen
 npx skills add danishi/claude-code-config --skill nanobanana
 npx skills add danishi/claude-code-config --skill lyria
 npx skills add danishi/claude-code-config --skill gemini-tts
@@ -252,6 +266,32 @@ You can also use Claude Code's natural language interface to perform PDF operati
 ```bash
 pip install pypdf
 ```
+
+### codex-imagegen Skill
+
+**Prerequisites:**
+```bash
+# Codex CLI must be installed
+npm install -g @openai/codex
+codex --version
+```
+
+**Generate an image:**
+```bash
+python3 <skill_dir>/scripts/generate.py "a cute golden retriever puppy" -o puppy.png
+```
+
+**With style and aspect ratio:**
+```bash
+python3 <skill_dir>/scripts/generate.py "Tokyo street at night" -s "anime style" -a 16:9 -o tokyo.png
+```
+
+**With negative prompt:**
+```bash
+python3 <skill_dir>/scripts/generate.py "a professional headshot" --negative "blurry, text, watermark" -o headshot.png
+```
+
+See [skills/codex-imagegen/SKILL.md](skills/codex-imagegen/SKILL.md) for full documentation and options.
 
 ### nanobanana Skill
 
