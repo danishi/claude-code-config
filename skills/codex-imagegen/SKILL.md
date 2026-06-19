@@ -17,7 +17,16 @@ tool handles authentication internally.
 
 ### 1. Install Codex CLI
 
+Any one of the following:
+
 ```bash
+# Mac / Linux (recommended)
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+
+# Homebrew
+brew install --cask codex
+
+# npm
 npm install -g @openai/codex
 ```
 
@@ -162,7 +171,7 @@ See `references/prompts.md` for detailed prompting guidance.
 
 | Error | Solution |
 |---|---|
-| `codex CLI not found` | Install Codex CLI: `npm install -g @openai/codex` |
+| `codex CLI not found` | Install Codex CLI: `curl -fsSL https://chatgpt.com/codex/install.sh \| sh` |
 | `Codex timed out` | Increase `--timeout` value |
 | `No images were generated` | Rephrase the prompt; it may have been blocked by safety filters |
 | `Codex reported success but no image found` | Check `~/.codex/generated_images/` manually |

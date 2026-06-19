@@ -271,9 +271,10 @@ pip install pypdf
 
 **Prerequisites:**
 ```bash
-# Codex CLI must be installed
-npm install -g @openai/codex
-codex --version
+# Codex CLI must be installed (any one of the following)
+curl -fsSL https://chatgpt.com/codex/install.sh | sh  # Mac / Linux
+brew install --cask codex                               # Homebrew
+npm install -g @openai/codex                            # npm
 ```
 
 **Generate an image:**
