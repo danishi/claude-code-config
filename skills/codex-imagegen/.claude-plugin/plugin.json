@@ -1,7 +1,7 @@
 {
   "name": "codex-imagegen",
   "version": "1.0.0",
-  "description": "Generate images using Codex CLI's built-in image_gen tool. No API key required. Supports prompt-driven control of style, composition, and aspect ratio. Outputs PNG files to a specified path.",
+  "description": "Generate and edit images using Codex CLI's built-in image_gen tool. No API key required. Supports prompt-to-image, document-to-diagram, and image refinement.",
   "author": {
     "name": "danishi"
   },
@@ -17,12 +17,13 @@
     "text to image",
     "picture",
     "illustration",
-    "photo"
+    "photo",
+    "diagram",
+    "infographic",
+    "document to image",
+    "image edit"
   ],
   "skills": [
     "./SKILL.md"
-  ],
-  "commands": [
-    "./scripts/"
   ]
 }

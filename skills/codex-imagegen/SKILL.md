@@ -1,23 +1,19 @@
 ---
 name: codex-imagegen
 description: >
-  Generate images using Codex CLI's built-in image_gen tool. No API key
-  required. Supports prompt-driven control of style, composition, and
-  aspect ratio via natural-language instructions. Outputs PNG files to a
-  specified path. Requires the Codex CLI (`codex`) to be installed.
+  Generate and edit images using Codex CLI's built-in image_gen tool. No API
+  key required. Supports three modes: prompt-to-image, document-to-diagram,
+  and image refinement. Requires the Codex CLI (`codex`) to be installed.
 ---
 
 # Codex Image Generation Skill
 
-Use the Python script in `scripts/` to generate images via Codex CLI's
-built-in `image_gen` tool. **No `OPENAI_API_KEY` required** — the built-in
-tool handles authentication internally.
+Generate and edit images via `codex exec` with the built-in `image_gen` tool.
+**No `OPENAI_API_KEY` required.**
 
 ## Prerequisites
 
-### 1. Install Codex CLI
-
-Any one of the following:
+### Codex CLI
 
 ```bash
 # Mac / Linux (recommended)
@@ -30,90 +26,95 @@ brew install --cask codex
 npm install -g @openai/codex
 ```
 
-Verify installation:
-
-```bash
-codex --version
-```
-
-### 2. Python 3.10+
-
-No additional Python packages are required.
+Verify: `codex --version`
 
 ---
 
-## Script
+## Modes
 
-### `scripts/generate.py` - Image generation
+This skill supports three modes. Claude Code constructs a `codex exec`
+command directly — no wrapper script is needed.
 
-#### Basic usage
+### Mode 1: Prompt → Image
 
-```bash
-python scripts/generate.py "a cute golden retriever puppy" -o puppy.png
-```
-
-#### With style
+Generate an image from a text prompt.
 
 ```bash
-python scripts/generate.py "a mountain landscape at sunset" -s "watercolor painting" -o landscape.png
+codex exec \
+  -s danger-full-access \
+  "Generate an image using the built-in image_gen tool. Save the result to <OUTPUT_PATH>. Image prompt: <PROMPT>"
 ```
 
-#### With aspect ratio
+#### Prompt construction
+
+Build the prompt by combining these elements in order:
+
+1. **Style** (optional): `Style: watercolor painting.`
+2. **Subject**: the user's description
+3. **Aspect ratio** (optional): `Use a wide landscape composition (16:9 aspect ratio).`
+4. **Negative** (optional): `Avoid: blurry, text, watermark.`
+
+Example:
+
+```
+Style: watercolor painting. A mountain landscape at sunset with dramatic clouds.
+Use a wide landscape composition (16:9 aspect ratio). Avoid: text, watermark.
+```
+
+### Mode 2: Document → Diagram
+
+Pass a large text, Markdown, or PDF file to Codex and have it generate an
+information-rich infographic or diagram.
 
 ```bash
-python scripts/generate.py "a city skyline at night" -a 16:9 -o skyline.png
+codex exec \
+  -s danger-full-access \
+  "Read the file <INPUT_PATH>. Analyze its content thoroughly and create an information-rich infographic/diagram that visually summarizes the key points, structure, and relationships. Generate the image using the built-in image_gen tool. Save the result to <OUTPUT_PATH>. Additional instructions: <USER_INSTRUCTIONS>"
 ```
 
-#### With negative prompt
+- Claude Code reads the document first with the Read tool to understand its
+  content, then crafts a detailed instruction for Codex.
+- For very large documents, Claude Code should summarize the key points and
+  include them directly in the Codex instruction for better results.
+- The user's instructions guide the diagram type (infographic, flowchart,
+  mind map, concept map, timeline, etc.).
+
+### Mode 3: Image Refinement
+
+Pass an existing image to Codex for modification.
 
 ```bash
-python scripts/generate.py "a professional headshot" --negative "blurry, low quality, text" -o headshot.png
+codex exec \
+  -s danger-full-access \
+  "Look at the image at <INPUT_IMAGE_PATH>. Make the following modifications using the built-in image_gen tool: <MODIFICATION_INSTRUCTIONS>. Save the result to <OUTPUT_PATH>."
 ```
 
-#### Multiple images
+- Use for color adjustments, style changes, element additions/removals,
+  composition tweaks, etc.
+- Reference the original image path so Codex can analyze it.
+
+---
+
+## Generated Image Recovery
+
+Codex may save images to `~/.codex/generated_images/` instead of the
+requested output path. After running `codex exec`:
+
+1. Check if the output file exists at the requested path.
+2. If not, look for the most recently created file in
+   `~/.codex/generated_images/` and copy it to the requested output path.
 
 ```bash
-python scripts/generate.py "abstract geometric pattern" -n 3 -o patterns.png
-# -> patterns_0.png, patterns_1.png, patterns_2.png
-```
-
-#### JSON output (for programmatic use)
-
-```bash
-python scripts/generate.py "a cat" --json -o cat.png
-```
-
-#### Full options
-
-```
-usage: generate.py [-h] [-o OUTPUT] [-a ASPECT] [-s STYLE]
-                   [--negative TEXT] [-n COUNT] [--timeout SECS]
-                   [-v] [--json] prompt
-
-Arguments:
-  prompt                Text prompt describing the image to generate
-
-Options:
-  -o, --output PATH     Output file path (default: ./codex-images/image.png)
-  -a, --aspect RATIO    Aspect ratio: 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3
-  -s, --style STYLE     Style description (e.g. "watercolor", "photorealistic")
-  --negative TEXT        Things to avoid in the image
-  -n, --count N         Number of images to generate (default: 1)
-  --timeout SECS        Timeout per image in seconds (default: 300)
-  -v, --verbose         Show codex output
-  --json                Output result as JSON
+# Find the latest generated image
+ls -t ~/.codex/generated_images/*.png 2>/dev/null | head -1
 ```
 
 ---
 
-## How It Works
+## Multiple Images
 
-1. The script builds an augmented prompt incorporating style, aspect ratio,
-   and negative constraints
-2. Calls `codex exec` with the built-in `image_gen` tool (no API key needed)
-3. Codex generates the image and saves it to the specified path
-4. If Codex saves to its default location (`~/.codex/generated_images/`),
-   the script copies it to the requested output path
+To generate multiple variations, run `codex exec` multiple times with
+numbered output paths (e.g., `image_0.png`, `image_1.png`, `image_2.png`).
 
 ---
 
@@ -155,15 +156,15 @@ See `references/prompts.md` for detailed prompting guidance.
 
 ## Limitations
 
-- **No explicit resolution control**: The built-in `image_gen` tool does
-  not accept pixel dimensions. Use aspect ratio and composition prompts
-  to influence output proportions.
+- **No explicit resolution control**: Use aspect ratio and composition
+  prompts to influence output proportions.
 - **Single image per call**: Each `codex exec` invocation generates one
-  image. The `-n` flag runs multiple sequential calls.
+  image.
 - **Codex CLI required**: The `codex` command must be installed and
   authenticated.
-- **No edit/inpainting**: This skill is for generation only. For image
-  editing, use Codex interactively.
+- **Document diagram quality**: Results depend on how well the instruction
+  conveys the document's structure. For complex documents, Claude Code
+  should pre-summarize key points in the instruction.
 
 ---
 
@@ -172,6 +173,6 @@ See `references/prompts.md` for detailed prompting guidance.
 | Error | Solution |
 |---|---|
 | `codex CLI not found` | Install Codex CLI: `curl -fsSL https://chatgpt.com/codex/install.sh \| sh` |
-| `Codex timed out` | Increase `--timeout` value |
+| `Codex timed out` | The default timeout is ~5 minutes. Retry or simplify the prompt |
 | `No images were generated` | Rephrase the prompt; it may have been blocked by safety filters |
-| `Codex reported success but no image found` | Check `~/.codex/generated_images/` manually |
+| `Image not at expected path` | Check `~/.codex/generated_images/` manually |
