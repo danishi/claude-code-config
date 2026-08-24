@@ -65,3 +65,22 @@ Use `--negative` to specify what to avoid:
 ```bash
 python scripts/generate.py "a cute cat" --negative "text, watermark, blurry, low quality"
 ```
+
+## Diagrams & Infographics
+
+Diffusion rendering breaks most often on arrows and lines. Follow the
+"Diagram & infographic quality" section in SKILL.md. In short:
+
+- Straight, short arrows only — never curved or loop-back arrows. Express
+  cycles/bidirectional sync with a small pill label instead.
+- Prefer robust structures: side-by-side panels, 2x2 card grids, stacked
+  horizontal bars, single-row card flows. No dense connector networks.
+- Style line: "Crisp flat vector infographic, white background, styled like
+  a clean professional presentation slide. Perfectly straight lines,
+  uniform stroke width, sharp clean edges, generous spacing."
+- Standard negative: "Avoid: watermark, misspelled text, wobbly lines,
+  blur, curved arrows, overlapping elements, clipped text, stray marks,
+  decorative dots, sketchy style, 3D effects, photorealism."
+- Quote exact label strings (especially Japanese) and add "All Japanese
+  text must be spelled exactly as given and legible", then visually verify
+  every label after generation.
