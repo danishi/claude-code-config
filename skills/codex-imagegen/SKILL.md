@@ -54,13 +54,16 @@ silently wrong images.
    macOS). If the mtime is old, the run skipped generation: delete the file
    and rerun with the MUST-generate phrasing above.
 
-3. **Beware cross-contamination between concurrent runs.** Parallel
-   `codex exec` jobs share `~/.codex/generated_images/`. A job whose
-   generation fails may "recover" by copying the newest file there, which
-   can be ANOTHER job's image, silently writing the wrong picture to the
-   requested path. When running generations in parallel, always visually
-   verify each output. If an output duplicates another job's image, delete
-   it and rerun that one image alone.
+3. **Isolate concurrent runs with per-job `CODEX_HOME`.** Parallel
+   `codex exec` jobs sharing the default `~/.codex` also share
+   `~/.codex/generated_images/`. A job whose generation fails may
+   "recover" by copying the newest file there, which can be ANOTHER job's
+   image, silently writing the wrong picture to the requested path.
+   Therefore: **when generating 2+ images, run them in parallel, each with
+   its own isolated `CODEX_HOME`** (see "Parallel Generation" below). This
+   removes the shared directory and makes parallelism safe. Never run
+   parallel jobs against the shared default home; if a past run did,
+   visually verify every output and rerun any duplicate solo.
 
 4. **Visually inspect every generated image before using it** (open/Read
    the PNG). Check for: garbled or misspelled text (especially Japanese),
@@ -190,8 +193,10 @@ sketchy style, 3D effects, photorealism.
 
 ## Generated Image Recovery
 
-Codex may save images to `~/.codex/generated_images/` instead of the
-requested output path. After running `codex exec`:
+Codex may save images to `<CODEX_HOME>/generated_images/` instead of the
+requested output path (`~/.codex/generated_images/` for a default-home
+run; `$JOB/generated_images/` for an isolated parallel job). After
+running `codex exec`:
 
 1. Check if the output file exists at the requested path **and has a fresh
    mtime** (Reliability rule 2).
@@ -210,15 +215,40 @@ ls -t ~/.codex/generated_images/*.png 2>/dev/null | head -1
 
 ---
 
-## Multiple Images
+## Multiple Images / Parallel Generation
 
-To generate multiple variations, run `codex exec` multiple times with
-numbered output paths (e.g. `image_0.png`, `image_1.png`, `image_2.png`).
+**Default to parallel execution when generating 2+ images.** Serial
+execution is only for retries of a single failed image. Parallelism is
+safe as long as every job gets its own isolated `CODEX_HOME`
+(cross-contamination — Reliability rule 3 — only happens through the
+shared `~/.codex/generated_images/` directory).
 
-Parallel background runs are fine for throughput, but they raise the
-cross-contamination risk described in Reliability rule 3: verify each
-output's mtime and content individually, and rerun any suspect image
-**solo** after deleting it.
+### Recipe (verified working on codex-cli 0.148.0)
+
+For each image `i`, prepare an isolated home and launch the job in the
+background (use the Bash tool's `run_in_background`, one call per image):
+
+```bash
+JOB=<SCRATCHPAD>/codex-job-<i>
+mkdir -p "$JOB"
+cp ~/.codex/auth.json ~/.codex/config.toml "$JOB/"
+rm -f <OUTPUT_PATH_i>
+CODEX_HOME="$JOB" codex exec \
+  -s danger-full-access \
+  "The file <OUTPUT_PATH_i> does not exist yet. You MUST generate a brand-new image using the built-in image_gen tool and save it to that exact path. Do not reuse or copy any previously generated image. Image prompt: <PROMPT_i>"
+```
+
+- `auth.json` carries the login; `config.toml` carries user settings.
+  Copying both into the job home is enough — no re-login needed.
+- Launch ALL jobs first, then wait for completions; do not run them one
+  by one.
+- After each job finishes, apply Reliability rules 2 and 4 to its output
+  (fresh mtime + visual inspection). Recovery lookups for that job go to
+  `$JOB/generated_images/`, NOT `~/.codex/generated_images/`.
+- If a job fails auth (stale token copy), re-copy a fresh
+  `~/.codex/auth.json` into its home and rerun that job alone.
+- Delete the job homes (`rm -rf <SCRATCHPAD>/codex-job-*`) after all
+  outputs are verified.
 
 ---
 
@@ -284,5 +314,6 @@ See `references/prompts.md` for detailed prompting guidance.
 | `No images were generated` | Rephrase the prompt; it may have been blocked by safety filters |
 | `Image not at expected path` | Check `~/.codex/generated_images/` manually (see recovery warning) |
 | Output file unchanged (old mtime) | Codex skipped generation because the file already existed. Delete the file and rerun with the "does not exist yet / MUST generate" phrasing |
-| Output duplicates another parallel job's image | Cross-contamination via `generated_images/`. Delete the file and rerun that image alone |
+| Output duplicates another parallel job's image | Cross-contamination via a shared `generated_images/` — the jobs were run without isolated `CODEX_HOME`. Delete the file and rerun that image alone (or rerun all jobs with per-job `CODEX_HOME`) |
+| Parallel job fails with auth error | The copied `auth.json` went stale. Re-copy a fresh `~/.codex/auth.json` into that job's home and rerun it alone |
 | Broken arrows / wobbly lines in diagrams | Simplify the composition per "Diagram & infographic quality": straight short arrows only, no curves, generous spacing, then regenerate |
