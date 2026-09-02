@@ -6,12 +6,16 @@ description: >
   explicitly requested via --pro / --fast. Supports text-to-video and
   image-to-video (first frame + optional last frame), 16:9 / 9:16, 720p / 1080p
   (4k on Pro), 4-8s clips, and 1-4 videos per request. Works with both the
-  Gemini Developer API and Vertex AI.
+  Gemini Developer API and Vertex AI, with Atlas Cloud as an optional
+  text-to-video provider.
 ---
 
 # Veo - AI Video Generation Skill
 
 Use the Python script in `scripts/` to generate videos via Google Gemini Veo 3.1.
+
+Google remains the default provider. Atlas Cloud is an explicit opt-in for
+text-to-video generation and uses the same Veo 3.1 family through a unified API.
 
 > **Default model is the cheapest one.** The more expensive models are used
 > **only when explicitly requested.**
@@ -64,6 +68,8 @@ export GOOGLE_CLOUD_LOCATION="us-central1"   # optional, defaults to us-central1
 | `VEO_MODEL` | `veo-3.1-lite-generate-preview` | Force a specific model (overrides flags) |
 | `VIDEO_OUTPUT_DIR` | `./veo-videos` | Default output directory |
 | `VEO_NO_SSL_VERIFY` | _(unset)_ | Set to `1` / `true` / `yes` to disable SSL certificate verification |
+| `ATLASCLOUD_API_KEY` | _(unset)_ | Required only with `--provider atlas` |
+| `ATLAS_VEO_MODEL` | Atlas Veo model matching the selected tier | Override the Atlas model ID |
 
 ---
 
@@ -123,10 +129,22 @@ python scripts/generate.py "ocean waves" --no-ssl-verify -o waves.mp4
 python scripts/generate.py "ocean waves" --json -o waves.mp4
 ```
 
+#### Atlas Cloud text-to-video (explicit opt-in)
+
+```bash
+python scripts/generate.py "ocean waves" --provider atlas --duration 4 -o waves.mp4
+```
+
+The Atlas provider discovers the live model schema before its single generation
+submission, then polls the prediction endpoint with bounded GET retries. It
+currently supports text-to-video and `--count 1`; Google remains the provider
+for first/last-frame generation and multi-video requests.
+
 #### Full options
 
 ```
 usage: generate.py [-h] [-o OUTPUT] [-i IMAGE] [--last-frame PATH]
+                   [--provider {google,atlas}]
                    [-r {16:9,9:16}] [--resolution {720p,1080p,4k}]
                    [-d DURATION] [-n COUNT]
                    [--person-generation {auto,dont_allow,allow_adult,allow_all}]
@@ -216,6 +234,7 @@ See `references/prompts.md` for category-specific templates.
 |---|---|
 | `google-genai package not installed` | Run `pip install google-genai` |
 | `No API credentials found` | Set `GEMINI_API_KEY` or `GOOGLE_CLOUD_PROJECT` |
+| `ATLASCLOUD_API_KEY is required` | Set `ATLASCLOUD_API_KEY` or use the default Google provider |
 | `Veo 3.1 Lite does not support 4k` | Use `--pro` for 4k, or pick 720p/1080p |
 | `No videos were generated` | Rephrase the prompt; it may have been blocked |
 | `personGeneration is currently not supported` | The Gemini Developer API only supports `allow_all`. The script auto-retries with `allow_all`; or pass `--person-generation allow_all` explicitly |

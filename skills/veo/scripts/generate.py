@@ -41,6 +41,10 @@ import time
 import warnings
 from datetime import datetime
 from pathlib import Path
+from urllib.request import urlretrieve
+
+from atlas_provider import request_video as request_atlas_video
+from atlas_provider import select_model as select_atlas_model
 
 try:
     from google import genai
@@ -248,6 +252,7 @@ def generate_video(
     timeout: float | None = None,
     verbose: bool = False,
     no_ssl_verify: bool = False,
+    provider: str = "google",
 ) -> dict:
     """Generate video(s) using the Veo API.
 
@@ -271,11 +276,101 @@ def generate_video(
         timeout:           Max seconds to wait (None = no limit).
         verbose:           Print progress information.
         no_ssl_verify:     Disable SSL certificate verification.
+        provider:          "google" (default) or opt-in "atlas".
 
     Returns:
         dict with keys: success (bool), paths (list[str]), error (str|None),
         metadata (dict|None).
     """
+    if provider == "atlas":
+        if image_path or last_frame_path:
+            return {
+                "success": False,
+                "error": "The Atlas provider currently supports text-to-video only.",
+                "paths": [],
+                "metadata": None,
+            }
+        if number_of_videos != 1:
+            return {
+                "success": False,
+                "error": "The Atlas provider currently supports --count 1 only.",
+                "paths": [],
+                "metadata": None,
+            }
+        if person_generation != "auto":
+            return {
+                "success": False,
+                "error": "--person-generation is not supported by the Atlas provider.",
+                "paths": [],
+                "metadata": None,
+            }
+        if no_ssl_verify:
+            return {
+                "success": False,
+                "error": "--no-ssl-verify is not supported by the Atlas provider.",
+                "paths": [],
+                "metadata": None,
+            }
+        if poll_interval <= 0:
+            return {
+                "success": False,
+                "error": "--poll-interval must be greater than zero.",
+                "paths": [],
+                "metadata": None,
+            }
+
+        atlas_key = os.environ.get("ATLASCLOUD_API_KEY", "").strip()
+        if not atlas_key:
+            return {
+                "success": False,
+                "error": "ATLASCLOUD_API_KEY is required for the Atlas provider.",
+                "paths": [],
+                "metadata": None,
+            }
+
+        model = os.environ.get("ATLAS_VEO_MODEL") or select_atlas_model(
+            force_pro=force_pro,
+            force_fast=force_fast,
+        )
+        try:
+            video_url = request_atlas_video(
+                atlas_key,
+                prompt,
+                model=model,
+                aspect_ratio=aspect_ratio,
+                resolution=resolution,
+                duration=duration_seconds,
+                negative_prompt=negative_prompt,
+                seed=seed,
+                poll_interval=poll_interval,
+                max_polls=max(1, int((timeout or 1200) / poll_interval)),
+            )
+            target = output_path or generate_output_path()
+            Path(target).parent.mkdir(parents=True, exist_ok=True)
+            urlretrieve(video_url, target)
+            return {
+                "success": True,
+                "paths": [target],
+                "error": None,
+                "metadata": {
+                    "provider": "atlas",
+                    "model": model,
+                    "prompt": prompt,
+                    "aspect_ratio": aspect_ratio,
+                    "resolution": resolution,
+                    "duration_seconds": duration_seconds,
+                    "number_of_videos": 1,
+                    "timestamp": datetime.now().astimezone().isoformat(),
+                },
+            }
+        except (OSError, ValueError, RuntimeError) as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "paths": [],
+                "metadata": None,
+            }
+
     client = create_client(no_ssl_verify=no_ssl_verify)
     model = select_model(force_pro=force_pro, force_fast=force_fast)
 
@@ -472,6 +567,10 @@ Models (default is the cheapest; Pro/Fast are opt-in only):
     )
 
     parser.add_argument("prompt", help="Text prompt for video generation")
+    parser.add_argument(
+        "--provider", choices=["google", "atlas"], default="google",
+        help="API provider (default: google)",
+    )
     parser.add_argument("-o", "--output", help="Output .mp4 file path")
     parser.add_argument(
         "-i", "--image", help="Starting frame image (image-to-video)",
@@ -555,6 +654,7 @@ Models (default is the cheapest; Pro/Fast are opt-in only):
         timeout=args.timeout,
         verbose=args.verbose or (args.output is None and not args.json_output),
         no_ssl_verify=args.no_ssl_verify,
+        provider=args.provider,
     )
 
     if args.json_output:
