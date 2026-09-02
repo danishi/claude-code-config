@@ -175,13 +175,15 @@ Automatically runs code review on every pull request using the official `code-re
 
 ### Adding the Marketplace
 
-Add to your Claude Code settings file (`~/.config/claude/settings.json`):
+Add to your Claude Code settings file (`~/.claude/settings.json`):
 
 ```json
 {
-  "plugin_marketplaces": [
-    "https://github.com/danishi/claude-code-config"
-  ]
+  "extraKnownMarketplaces": {
+    "claude-code-config": {
+      "source": { "source": "github", "repo": "danishi/claude-code-config" }
+    }
+  }
 }
 ```
 
@@ -450,8 +452,9 @@ This repository also serves as a personal reference for Claude Code configuratio
 - **Auto mode** - `permissions.defaultMode: "auto"` lets the background classifier approve safe actions. There are no blanket `Bash` / `Edit` allow rules, so every shell command and file edit is actually classified, and `autoMode.classifyAllShell` routes shell commands through the classifier even when a user-level allow rule matches. Note: `"auto"` and `autoMode` are honored only from `~/.claude/settings.json` (or managed settings), not from a project's `.claude/settings.json`
 - **Sandbox** - `sandbox.enabled` runs Bash under OS-level filesystem and network isolation (Seatbelt on macOS, bubblewrap + socat on Linux/WSL2). `Read(...)` deny rules are merged into the sandbox read policy, so `cat .env` is blocked the same way as the Read tool
 - **Permissions** - Three tiers: `allow` for read-only tools and documentation MCP servers, `ask` for outward-facing or irreversible actions (publishing, `terraform apply`, Backlog writes, arbitrary JS in the browser), `deny` for secrets, system paths, privilege escalation, and destructive commands
-- **Hooks** - macOS notification hooks for permission requests and task completion
-- **Status Line** - Custom status bar showing model, branch, context usage, rate limits, cost, and line changes
+- **Hooks** - macOS sound/notification hooks on `Notification` and `Stop`, plus a single `notchi-hook.sh` (expected at `~/.claude/hooks/`) wired to the session, prompt, tool, compaction, and stop lifecycle events
+- **Status Line** - Custom status bar showing model, branch, context usage, rate limits, an optional Fable usage segment (from `~/.claude/statusline-fable-usage.sh`, skipped when absent), cost, and line changes
+- **Plugins & Marketplaces** - `enabledPlugins` and `extraKnownMarketplaces` declare the plugin set and where each marketplace is fetched from, so a fresh machine resolves them without manual `claude marketplace add`
 
 ## Related Resources
 
