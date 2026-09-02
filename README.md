@@ -10,7 +10,8 @@ Personal repository for managing Claude Code settings, plugins, and development 
 .
 ├── .claude/                    # Claude Code project settings
 │   ├── CLAUDE.md              # Project guidelines & principles
-│   └── settings.json          # Permissions, hooks, MCP servers
+│   ├── settings.json          # Permissions, hooks, MCP servers
+│   └── statusline-fable-usage.sh  # Status line helper (Fable weekly usage)
 ├── .claude-plugin/
 │   └── marketplace.json       # Plugin marketplace definition
 ├── .github/workflows/         # GitHub Actions
@@ -452,8 +453,8 @@ This repository also serves as a personal reference for Claude Code configuratio
 - **Auto mode** - `permissions.defaultMode: "auto"` lets the background classifier approve safe actions. There are no blanket `Bash` / `Edit` allow rules, so every shell command and file edit is actually classified, and `autoMode.classifyAllShell` routes shell commands through the classifier even when a user-level allow rule matches. Note: `"auto"` and `autoMode` are honored only from `~/.claude/settings.json` (or managed settings), not from a project's `.claude/settings.json`
 - **Sandbox** - `sandbox.enabled` runs Bash under OS-level filesystem and network isolation (Seatbelt on macOS, bubblewrap + socat on Linux/WSL2). `Read(...)` deny rules are merged into the sandbox read policy, so `cat .env` is blocked the same way as the Read tool
 - **Permissions** - Three tiers: `allow` for read-only tools and documentation MCP servers, `ask` for outward-facing or irreversible actions (publishing, `terraform apply`, Backlog writes, arbitrary JS in the browser), `deny` for secrets, system paths, privilege escalation, and destructive commands
-- **Hooks** - macOS sound/notification hooks on `Notification` and `Stop`, plus a single `notchi-hook.sh` wired to the session, prompt, tool, compaction, and stop lifecycle events. The hook is looked up at `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh` and is a silent no-op when that file is missing or not executable, so the settings work on a machine without it
-- **Status Line** - Custom status bar showing model, branch, context usage, rate limits, an optional Fable usage segment (from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/statusline-fable-usage.sh`, skipped when absent), cost, and line changes
+- **Hooks** - macOS sound/notification hooks for permission requests (`Notification`) and task completion (`Stop`)
+- **Status Line** - Custom status bar showing model, branch, context usage, rate limits, an optional Fable weekly usage segment, cost, and line changes. The usage segment is produced by [`.claude/statusline-fable-usage.sh`](.claude/statusline-fable-usage.sh), which reads the OAuth token from the macOS Keychain and caches the result for 60 seconds; copy it to `~/.claude/statusline-fable-usage.sh` (the status line resolves it under `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`) and the segment is simply omitted when the script is missing or the API is unreachable
 - **Plugins & Marketplaces** - `enabledPlugins` and `extraKnownMarketplaces` declare the plugin set and where each marketplace is fetched from, so a fresh machine resolves them without manual `claude marketplace add`
 
 ## Related Resources

@@ -91,69 +91,6 @@
     "command": "input=$(cat); PCT=$(echo \"$input\" | jq -r '.context_window.used_percentage // 0' | cut -d. -f1); COST=$(echo \"$input\" | jq -r '.cost.total_cost_usd // 0'); MODEL=$(echo \"$input\" | jq -r '.model.display_name // \"?\"'); DIR=$(echo \"$input\" | jq -r '.workspace.current_dir // \".\"'); BRANCH=$(cd \"$DIR\" 2>/dev/null && git rev-parse --abbrev-ref HEAD 2>/dev/null || echo '-'); LA=$(echo \"$input\" | jq -r '.cost.total_lines_added // 0'); LD=$(echo \"$input\" | jq -r '.cost.total_lines_removed // 0'); H5=$(echo \"$input\" | jq -r '.rate_limits.five_hour.used_percentage // 0' | cut -d. -f1); D7=$(echo \"$input\" | jq -r '.rate_limits.seven_day.used_percentage // 0' | cut -d. -f1); FB=$(bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/statusline-fable-usage.sh\" 2>/dev/null); R='\\033[0m'; DIM='\\033[2m'; ring() { local p=${1:-0}; local RINGS=('○' '◔' '◑' '◕' '●'); local idx=$((p / 20)); [ \"$idx\" -gt 4 ] && idx=4; [ \"$idx\" -lt 0 ] && idx=0; printf '%s' \"${RINGS[$idx]}\"; }; grad() { local p=${1:-0}; [ \"$p\" -lt 0 ] 2>/dev/null && p=0; [ \"$p\" -gt 100 ] 2>/dev/null && p=100; if [ \"$p\" -lt 50 ]; then printf '\\033[38;2;%d;200;80m' $((p * 255 / 50)); else local g=$((200 - (p - 50) * 4)); [ \"$g\" -lt 0 ] && g=0; printf '\\033[38;2;255;%d;60m' \"$g\"; fi; }; fmtring() { local lcolor=$1 label=$2 p=$3; printf \"${lcolor}%s${R} $(grad \"$p\")%s %d%%${R}\" \"$label\" \"$(ring \"$p\")\" \"$p\"; }; CTX_C='\\033[1;36m'; H5_C='\\033[1;35m'; D7_C='\\033[1;33m'; FB_C='\\033[38;5;208m'; FBSEG=''; [ -n \"$FB\" ] && FBSEG=$(printf \" ${DIM}│${R} %s\" \"$(fmtring \"$FB_C\" Fable \"$FB\")\"); printf \"\\033[1;34m%s${R} ${DIM}│${R} \\033[1;32m%s${R} ${DIM}│${R} \\033[1;33m%s${R} ${DIM}│${R} %s ${DIM}│${R} %s ${DIM}│${R} %s%s ${DIM}│${R} \\033[1;36m\\$%.2f${R} ${DIM}│${R} \\033[32m+%s${R} \\033[31m-%s${R}\" \"$MODEL\" \"$(basename \"$DIR\")\" \"$BRANCH\" \"$(fmtring \"$CTX_C\" ctx \"$PCT\")\" \"$(fmtring \"$H5_C\" 5h \"$H5\")\" \"$(fmtring \"$D7_C\" 7d \"$D7\")\" \"$FBSEG\" \"$COST\" \"$LA\" \"$LD\""
   },
   "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      }
-    ],
-    "SessionEnd": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "matcher": "",
@@ -166,36 +103,6 @@
         ]
       }
     ],
-    "PreCompact": [
-      {
-        "matcher": "auto",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      },
-      {
-        "matcher": "manual",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      }
-    ],
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "matcher": "",
@@ -204,14 +111,6 @@
             "type": "command",
             "command": "if [ \"$(uname)\" = \"Darwin\" ]; then afplay /System/Library/Sounds/Hero.aiff & osascript -e 'display notification \"Task completed\" with title \"Claude Code\" subtitle \"Process finished\"'; fi",
             "timeout": 10
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "h=\"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/notchi-hook.sh\"; [ -x \"$h\" ] && exec \"$h\"; exit 0"
           }
         ]
       }
