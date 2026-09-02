@@ -1,65 +1,81 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
+    "defaultMode": "auto",
     "allow": [
-      "Edit",
       "Read",
-      "Write",
-      "LS",
       "Glob",
       "Grep",
-      "NotebookEdit",
-      "Bash(*)",
+      "Skill",
       "WebSearch",
       "WebFetch",
-      "Skill(*)",
-      "mcp__aws-knowledge__aws___*",
+      "mcp__aws-knowledge__*",
       "mcp__google-developer-knowledge__*",
-      "mcp__chrome-devtools__*",
       "mcp__context7__*",
-      "mcp__drawio__*",
-      "mcp__backlog__*"
+      "mcp__backlog__get_*",
+      "mcp__backlog__count_*",
+      "mcp__drawio__get_*",
+      "mcp__drawio__list_*",
+      "mcp__drawio__search_shapes",
+      "mcp__chrome-devtools__get_*",
+      "mcp__chrome-devtools__list_*",
+      "mcp__chrome-devtools__take_snapshot",
+      "mcp__chrome-devtools__take_screenshot"
+    ],
+    "ask": [
+      "Bash(npm publish *)",
+      "Bash(docker push *)",
+      "Bash(terraform apply *)",
+      "Bash(terraform destroy *)",
+      "Bash(gh release create *)",
+      "mcp__backlog__add_*",
+      "mcp__backlog__update_*",
+      "mcp__backlog__delete_*",
+      "mcp__chrome-devtools__evaluate_script"
     ],
     "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(.envrc)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*credential*)",
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/credentials)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.databrickscfg)",
+      "Edit(.env)",
+      "Edit(.env.*)",
+      "Edit(.envrc)",
+      "Edit(**/*.pem)",
+      "Edit(**/*.key)",
+      "Edit(**/*credential*)",
+      "Edit(//etc/**)",
+      "Edit(//usr/**)",
+      "Edit(//sys/**)",
+      "Edit(//proc/**)",
       "Bash(sudo *)",
       "Bash(su *)",
+      "Bash(doas *)",
       "Bash(chmod 777 *)",
       "Bash(chmod +s *)",
       "Bash(chown root *)",
-      "Read(.env)",
-      "Read(.env.local)",
-      "Read(.envrc)",
-      "Edit(.env)",
-      "Edit(.env.local)",
-      "Edit(.envrc)",
-      "Read(**/*.pem)",
-      "Read(**/*.key)",
-      "Edit(**/*.pem)",
-      "Edit(**/*.key)",
-      "Read(**/*credential*)",
-      "Edit(**/*credential*)",
-      "Read(~/.ssh/*)",
-      "Read(~/.aws/credentials)",
-      "Read(~/.config/gcloud/*)",
-      "Read(~/.databrickscfg)",
+      "Bash(mkfs*)",
+      "Bash(dd if=*)",
       "Bash(rm -rf /)",
       "Bash(rm -rf /*)",
       "Bash(rm -rf ~)",
       "Bash(rm -rf ~/*)",
-      "Bash(mkfs*)",
-      "Bash(dd if=*)",
-      "Bash(curl * | bash)",
-      "Bash(curl * | sh)",
-      "Bash(wget * | bash)",
-      "Bash(wget * | sh)",
       "Bash(git push --force *)",
-      "Bash(git push -f *)",
-      "Edit(//etc/*)",
-      "Edit(//usr/*)",
-      "Edit(//sys/*)",
-      "Edit(//proc/*)"
-    ],
-    "defaultMode": "auto"
+      "Bash(git push -f *)"
+    ]
+  },
+  "autoMode": {
+    "classifyAllShell": true
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
   },
   "statusLine": {
     "type": "command",
@@ -72,7 +88,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if [ \"$(uname)\" = \"Darwin\" ]; then afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display notification \"Claude Code is requesting permission\" with title \"Claude Code\" subtitle \"Awaiting confirmation\"'; fi"
+            "command": "if [ \"$(uname)\" = \"Darwin\" ]; then afplay /System/Library/Sounds/Glass.aiff & osascript -e 'display notification \"Claude Code is requesting permission\" with title \"Claude Code\" subtitle \"Awaiting confirmation\"'; fi",
+            "timeout": 10
           }
         ]
       }
@@ -83,7 +100,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if [ \"$(uname)\" = \"Darwin\" ]; then afplay /System/Library/Sounds/Hero.aiff & osascript -e 'display notification \"Task completed\" with title \"Claude Code\" subtitle \"Process finished\"'; fi"
+            "command": "if [ \"$(uname)\" = \"Darwin\" ]; then afplay /System/Library/Sounds/Hero.aiff & osascript -e 'display notification \"Task completed\" with title \"Claude Code\" subtitle \"Process finished\"'; fi",
+            "timeout": 10
           }
         ]
       }
@@ -93,9 +111,6 @@
     "document-skills@anthropic-agent-skills": true,
     "danishi@claude-code-config": true
   },
-  "language": "Japanese",
-  "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
   "enabledMcpjsonServers": [
     "aws-knowledge",
     "chrome-devtools",
@@ -104,14 +119,15 @@
     "drawio",
     "backlog"
   ],
-  "enableAllProjectMcpServers": true,
+  "language": "japanese",
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "high",
+  "tui": "fullscreen",
   "env": {
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "128000",
     "MAX_MCP_OUTPUT_TOKENS": "50000",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "ENABLE_TOOL_SEARCH": "1",
-    "CLAUDE_CODE_MAX_AGENT_TURNS": "10",
-    "CLAUDE_CODE_NO_FLICKER": "1",
     "CLAUDE_CODE_ATTRIBUTION_HEADER": "0",
     "VISUAL": "vim"
   }

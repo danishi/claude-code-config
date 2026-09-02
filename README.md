@@ -444,12 +444,14 @@ See [skills/skill-packager/SKILL.md](skills/skill-packager/SKILL.md) for full do
 
 ## Project Settings
 
-This repository also serves as a reference for Claude Code project configuration:
+This repository also serves as a personal reference for Claude Code configuration. `.claude/settings.json` is written as the content of `~/.claude/settings.json` (user scope), so it deliberately includes keys that only take effect from user settings:
 
 - **CLAUDE.md** - Project principles (MCP-first approach, language settings, quality standards)
-- **Permissions** - Allowlist/denylist based security model with deny rules for sensitive files and destructive commands
+- **Auto mode** - `permissions.defaultMode: "auto"` lets the background classifier approve safe actions. There are no blanket `Bash` / `Edit` allow rules, so every shell command and file edit is actually classified, and `autoMode.classifyAllShell` routes shell commands through the classifier even when a user-level allow rule matches. Note: `"auto"` and `autoMode` are honored only from `~/.claude/settings.json` (or managed settings), not from a project's `.claude/settings.json`
+- **Sandbox** - `sandbox.enabled` runs Bash under OS-level filesystem and network isolation (Seatbelt on macOS, bubblewrap + socat on Linux/WSL2). `Read(...)` deny rules are merged into the sandbox read policy, so `cat .env` is blocked the same way as the Read tool
+- **Permissions** - Three tiers: `allow` for read-only tools and documentation MCP servers, `ask` for outward-facing or irreversible actions (publishing, `terraform apply`, Backlog writes, arbitrary JS in the browser), `deny` for secrets, system paths, privilege escalation, and destructive commands
 - **Hooks** - macOS notification hooks for permission requests and task completion
-- **Status Line** - Custom status bar showing model, branch, context usage, cost, and line changes
+- **Status Line** - Custom status bar showing model, branch, context usage, rate limits, cost, and line changes
 
 ## Related Resources
 
