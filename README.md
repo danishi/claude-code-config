@@ -10,7 +10,8 @@ Personal repository for managing Claude Code settings, plugins, and development 
 .
 ├── .claude/                    # Claude Code project settings
 │   ├── CLAUDE.md              # Project guidelines & principles
-│   └── settings.json          # Permissions, hooks, MCP servers
+│   ├── settings.json          # Permissions, hooks, MCP servers
+│   └── statusline-fable-usage.sh  # Status line helper (Fable weekly usage)
 ├── .claude-plugin/
 │   └── marketplace.json       # Plugin marketplace definition
 ├── .github/workflows/         # GitHub Actions
@@ -175,13 +176,15 @@ Automatically runs code review on every pull request using the official `code-re
 
 ### Adding the Marketplace
 
-Add to your Claude Code settings file (`~/.config/claude/settings.json`):
+Add to your Claude Code settings file (`~/.claude/settings.json`):
 
 ```json
 {
-  "plugin_marketplaces": [
-    "https://github.com/danishi/claude-code-config"
-  ]
+  "extraKnownMarketplaces": {
+    "claude-code-config": {
+      "source": { "source": "github", "repo": "danishi/claude-code-config" }
+    }
+  }
 }
 ```
 
@@ -444,12 +447,15 @@ See [skills/skill-packager/SKILL.md](skills/skill-packager/SKILL.md) for full do
 
 ## Project Settings
 
-This repository also serves as a reference for Claude Code project configuration:
+This repository also serves as a personal reference for Claude Code configuration. `.claude/settings.json` is written as the content of `~/.claude/settings.json` (user scope), so it deliberately includes keys that only take effect from user settings:
 
 - **CLAUDE.md** - Project principles (MCP-first approach, language settings, quality standards)
-- **Permissions** - Allowlist/denylist based security model with deny rules for sensitive files and destructive commands
-- **Hooks** - macOS notification hooks for permission requests and task completion
-- **Status Line** - Custom status bar showing model, branch, context usage, cost, and line changes
+- **Auto mode** - `permissions.defaultMode: "auto"` lets the background classifier approve safe actions. There are no blanket `Bash` / `Edit` allow rules, so every shell command and file edit is actually classified, and `autoMode.classifyAllShell` routes shell commands through the classifier even when a user-level allow rule matches. Note: `"auto"` and `autoMode` are honored only from `~/.claude/settings.json` (or managed settings), not from a project's `.claude/settings.json`
+- **Sandbox** - `sandbox.enabled` runs Bash under OS-level filesystem and network isolation (Seatbelt on macOS, bubblewrap + socat on Linux/WSL2). `Read(...)` deny rules are merged into the sandbox read policy, so `cat .env` is blocked the same way as the Read tool
+- **Permissions** - Three tiers: `allow` for read-only tools and documentation MCP servers, `ask` for outward-facing or irreversible actions (publishing, `terraform apply`, Backlog writes, arbitrary JS in the browser), `deny` for secrets, system paths, privilege escalation, and destructive commands
+- **Hooks** - macOS sound/notification hooks for permission requests (`Notification`) and task completion (`Stop`)
+- **Status Line** - Custom status bar showing model, branch, context usage, rate limits, an optional Fable weekly usage segment, cost, and line changes. The usage segment is produced by [`.claude/statusline-fable-usage.sh`](.claude/statusline-fable-usage.sh), which reads the OAuth token from the macOS Keychain and caches the result for 60 seconds; copy it to `~/.claude/statusline-fable-usage.sh` (the status line resolves it under `${CLAUDE_CONFIG_DIR:-$HOME/.claude}`) and the segment is simply omitted when the script is missing or the API is unreachable
+- **Plugins & Marketplaces** - `enabledPlugins` and `extraKnownMarketplaces` declare the plugin set and where each marketplace is fetched from, so a fresh machine resolves them without manual `claude marketplace add`
 
 ## Related Resources
 

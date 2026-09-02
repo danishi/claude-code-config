@@ -26,3 +26,7 @@
 
 ### DrawIO
 - When creating or editing `.drawio` files, use only DrawIO's built-in official icon sets (shape libraries). Do not embed external image URLs or custom images.
+
+## Settings
+- `.claude/settings.json` is a personal reference for `~/.claude/settings.json` (user scope). It intentionally contains user-scope-only keys (`permissions.defaultMode: "auto"`, `autoMode`), which Claude Code ignores when read from a project's `.claude/settings.json`.
+- Before adding a key or `env` variable, verify it exists in the official settings schema / docs or the installed CLI. Do not add unverified keys.
