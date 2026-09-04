@@ -120,9 +120,7 @@
     "danishi@claude-code-config": true,
     "document-skills@anthropic-agent-skills": true,
     "slack@claude-plugins-official": true,
-    "codex@openai-codex": true,
-    "gaipack-ontology@gaipack-skill-marketplace": true,
-    "oh-my-claudecode@omc": false
+    "codex@openai-codex": true
   },
   "extraKnownMarketplaces": {
     "claude-code-config": {
@@ -137,22 +135,10 @@
         "repo": "awslabs/agent-plugins"
       }
     },
-    "gaipack-skill-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "ambient-lab/gaipack-skill-marketplace"
-      }
-    },
     "openai-codex": {
       "source": {
         "source": "github",
         "repo": "openai/codex-plugin-cc"
-      }
-    },
-    "omc": {
-      "source": {
-        "source": "git",
-        "url": "https://github.com/Yeachan-Heo/oh-my-claudecode.git"
       }
     }
   },
