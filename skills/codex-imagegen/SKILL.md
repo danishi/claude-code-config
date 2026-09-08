@@ -28,6 +28,77 @@ npm install -g @openai/codex
 
 Verify: `codex --version`
 
+### Authentication (check this FIRST when generation 404s)
+
+`codex` runs on the ChatGPT account login stored in `~/.codex/auth.json`.
+The `id_token` expires roughly 10 hours after it is issued, and **an
+expired token does not surface as an auth error** — it comes back as a
+model 404:
+
+```
+ERROR: unexpected status 404 Not Found: The model `gpt-5.x` does not exist
+or you do not have access to it.
+```
+
+Every *other* model then fails with `... is not supported when using Codex
+with a ChatGPT account`, which makes it look like a plan/entitlement
+problem. It is not. The token is simply stale.
+
+Check the expiry before assuming anything else:
+
+```bash
+python3 - <<'PY'
+import json, base64, datetime, os
+d = json.load(open(os.path.expanduser('~/.codex/auth.json')))
+p = d['tokens']['id_token'].split('.')[1]; p += '=' * (-len(p) % 4)
+c = json.loads(base64.urlsafe_b64decode(p))
+print('exp:', datetime.datetime.fromtimestamp(c['exp']).isoformat())
+print('now:', datetime.datetime.now().isoformat())
+PY
+```
+
+If `exp` is in the past, the fix is a re-login. It requires browser auth,
+so Claude Code cannot run it — ask the user to run it themselves in the
+prompt:
+
+```
+! codex login
+```
+
+Switching models (`-m gpt-5.4`, `-m gpt-5-codex`, …) does not work around
+a stale token: older models are rejected outright for ChatGPT-account
+logins. Upgrading the CLI (`codex update`) does not help either.
+Re-login is the only fix.
+
+---
+
+## Invocation contract (MUST follow)
+
+The exact shape of the `codex exec` call matters. Use this for every mode:
+
+```bash
+cd <OUTPUT_DIR>
+codex exec --sandbox workspace-write --skip-git-repo-check "<INSTRUCTION>" < /dev/null
+```
+
+Four non-obvious requirements, each from a real failure:
+
+- **`--sandbox workspace-write`, never `-s danger-full-access`.** Claude
+  Code's auto-mode permission classifier blocks `danger-full-access`, so
+  the call never runs at all. Do not retry it or try to route around the
+  denial. `workspace-write` is sufficient — it grants write access to the
+  working directory plus `/tmp` and `$TMPDIR`.
+- **`cd` into the output directory and pass a RELATIVE filename** in the
+  instruction (e.g. `hero.png`, not an absolute path). Under
+  `workspace-write` only the cwd tree is writable, so the output must live
+  inside it. Add "in the current working directory" to the instruction so
+  Codex resolves the path the same way.
+- **`--skip-git-repo-check`.** Without it, codex refuses to start:
+  `Not inside a trusted directory and --skip-git-repo-check was not
+  specified.` Scratchpad directories are not git repos.
+- **`< /dev/null`.** Without it, codex blocks on
+  `Reading additional input from stdin...` and never returns.
+
 ---
 
 ## Reliability rules (MUST follow)
@@ -83,10 +154,10 @@ command directly — no wrapper script is needed.
 Generate an image from a text prompt.
 
 ```bash
-rm -f <OUTPUT_PATH>
-codex exec \
-  -s danger-full-access \
-  "The file <OUTPUT_PATH> does not exist yet. You MUST generate a brand-new image using the built-in image_gen tool and save it to that exact path. Do not reuse or copy any previously generated image. Image prompt: <PROMPT>"
+cd <OUTPUT_DIR>
+rm -f <OUTPUT_FILE>
+codex exec --sandbox workspace-write --skip-git-repo-check \
+  "The file <OUTPUT_FILE> in the current working directory does not exist yet. You MUST generate a brand-new image using the built-in image_gen tool and save it to that exact path. Do not reuse or copy any previously generated image. Image prompt: <PROMPT>" < /dev/null
 ```
 
 #### Prompt construction
@@ -111,10 +182,10 @@ Pass a large text, Markdown, or PDF file to Codex and have it generate an
 information-rich infographic or diagram.
 
 ```bash
-rm -f <OUTPUT_PATH>
-codex exec \
-  -s danger-full-access \
-  "Read the file <INPUT_PATH>. Analyze its content thoroughly and create an information-rich infographic/diagram that visually summarizes the key points, structure, and relationships. The file <OUTPUT_PATH> does not exist yet. You MUST generate the image using the built-in image_gen tool and save it to that exact path. Additional instructions: <USER_INSTRUCTIONS>"
+cd <OUTPUT_DIR>
+rm -f <OUTPUT_FILE>
+codex exec --sandbox workspace-write --skip-git-repo-check \
+  "Read the file <INPUT_PATH>. Analyze its content thoroughly and create an information-rich infographic/diagram that visually summarizes the key points, structure, and relationships. The file <OUTPUT_FILE> in the current working directory does not exist yet. You MUST generate the image using the built-in image_gen tool and save it to that exact path. Additional instructions: <USER_INSTRUCTIONS>" < /dev/null
 ```
 
 - Claude Code reads the document first with the Read tool to understand its
@@ -130,9 +201,9 @@ codex exec \
 Pass an existing image to Codex for modification.
 
 ```bash
-codex exec \
-  -s danger-full-access \
-  "Look at the image at <INPUT_IMAGE_PATH>. Make the following modifications using the built-in image_gen tool: <MODIFICATION_INSTRUCTIONS>. Overwrite the existing file at <OUTPUT_PATH> with the modified image."
+cd <OUTPUT_DIR>
+codex exec --sandbox workspace-write --skip-git-repo-check \
+  "Look at the image at <INPUT_IMAGE_FILE> in the current working directory. Make the following modifications using the built-in image_gen tool: <MODIFICATION_INSTRUCTIONS>. Overwrite the existing file at <OUTPUT_FILE> with the modified image." < /dev/null
 ```
 
 - Use for color adjustments, style changes, element additions/removals,
@@ -223,7 +294,7 @@ safe as long as every job gets its own isolated `CODEX_HOME`
 (cross-contamination — Reliability rule 3 — only happens through the
 shared `~/.codex/generated_images/` directory).
 
-### Recipe (verified working on codex-cli 0.148.0)
+### Recipe
 
 For each image `i`, prepare an isolated home and launch the job in the
 background (use the Bash tool's `run_in_background`, one call per image):
@@ -232,14 +303,17 @@ background (use the Bash tool's `run_in_background`, one call per image):
 JOB=<SCRATCHPAD>/codex-job-<i>
 mkdir -p "$JOB"
 cp ~/.codex/auth.json ~/.codex/config.toml "$JOB/"
-rm -f <OUTPUT_PATH_i>
-CODEX_HOME="$JOB" codex exec \
-  -s danger-full-access \
-  "The file <OUTPUT_PATH_i> does not exist yet. You MUST generate a brand-new image using the built-in image_gen tool and save it to that exact path. Do not reuse or copy any previously generated image. Image prompt: <PROMPT_i>"
+cd <OUTPUT_DIR>
+rm -f <OUTPUT_FILE_i>
+CODEX_HOME="$JOB" codex exec --sandbox workspace-write --skip-git-repo-check \
+  "The file <OUTPUT_FILE_i> in the current working directory does not exist yet. You MUST generate a brand-new image using the built-in image_gen tool and save it to that exact path. Do not reuse or copy any previously generated image. Image prompt: <PROMPT_i>" < /dev/null
 ```
 
 - `auth.json` carries the login; `config.toml` carries user settings.
-  Copying both into the job home is enough — no re-login needed.
+  Copying both into the job home is enough — no re-login needed. Copy
+  `auth.json` fresh at launch time: a copy taken from an already-expired
+  token fails every job with the model 404 described under
+  "Authentication".
 - Launch ALL jobs first, then wait for completions; do not run them one
   by one.
 - After each job finishes, apply Reliability rules 2 and 4 to its output
@@ -295,7 +369,10 @@ See `references/prompts.md` for detailed prompting guidance.
 - **Single image per call**: Each `codex exec` invocation generates one
   image.
 - **Codex CLI required**: The `codex` command must be installed and
-  authenticated.
+  authenticated with a non-expired token.
+- **Output must live under the working directory**: `workspace-write`
+  only permits writes to the cwd tree, `/tmp` and `$TMPDIR`, so every
+  invocation `cd`s to the output directory first.
 - **Document diagram quality**: Results depend on how well the instruction
   conveys the document's structure. For complex documents, Claude Code
   should pre-summarize key points in the instruction.
@@ -310,6 +387,12 @@ See `references/prompts.md` for detailed prompting guidance.
 | Error | Solution |
 |---|---|
 | `codex CLI not found` | Install Codex CLI: `curl -fsSL https://chatgpt.com/codex/install.sh \| sh` |
+| `404 Not Found: The model ... does not exist or you do not have access to it` | The stored `id_token` expired. Ask the user to run `! codex login`. Do not switch models or update the CLI — neither fixes it (see "Authentication") |
+| `The '<model>' model is not supported when using Codex with a ChatGPT account` | That model is not available to ChatGPT-account logins. Do not pass `-m`; let the configured default model apply |
+| `Not inside a trusted directory and --skip-git-repo-check was not specified` | Add `--skip-git-repo-check` to the `codex exec` call |
+| Command hangs on `Reading additional input from stdin...` | Append `< /dev/null` to the `codex exec` call |
+| `-s danger-full-access` call is blocked / denied | Claude Code's permission classifier blocks it. Use `--sandbox workspace-write --skip-git-repo-check` with a relative output path under the cwd instead |
+| Codex says it cannot write the output path | The path is outside the sandbox. `cd` to the output directory and pass a relative filename |
 | `Codex timed out` | The default timeout is ~5 minutes. Retry or simplify the prompt |
 | `No images were generated` | Rephrase the prompt; it may have been blocked by safety filters |
 | `Image not at expected path` | Check `~/.codex/generated_images/` manually (see recovery warning) |

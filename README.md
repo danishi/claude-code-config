@@ -62,11 +62,11 @@ PDF page manipulation toolkit with a specialized `pdf-operator` agent:
 AI image generation using Codex CLI's built-in image_gen tool:
 
 - **No API Key Required** - Uses Codex's built-in image generation (no `OPENAI_API_KEY` needed)
-- **Style Control** - Specify style via `-s` (e.g. "watercolor", "anime", "photorealistic")
-- **Aspect Ratios** - 1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3
-- **Negative Prompts** - Exclude unwanted elements with `--negative`
-- **Batch Generation** - Generate multiple images with `-n`
-- **JSON Output** - Machine-readable output with `--json`
+- **Prompt to Image** - Generate an image from a text prompt
+- **Document to Diagram** - Turn a document into an information-rich infographic or diagram
+- **Image Refinement** - Modify an existing image with natural language instructions
+- **Style / Aspect Ratio / Negative** - Controlled through the prompt (watercolor, 16:9, "Avoid: text, watermark", ...)
+- **Parallel Generation** - Multiple images at once with per-job `CODEX_HOME` isolation
 
 ### nanobanana Skill
 
@@ -278,22 +278,29 @@ pip install pypdf
 curl -fsSL https://chatgpt.com/codex/install.sh | sh  # Mac / Linux
 brew install --cask codex                               # Homebrew
 npm install -g @openai/codex                            # npm
+
+# A ChatGPT account login is required. The stored token expires in ~10 hours,
+# and an expired token shows up as a model 404 - re-login when that happens.
+codex login
 ```
 
-**Generate an image:**
-```bash
-python3 <skill_dir>/scripts/generate.py "a cute golden retriever puppy" -o puppy.png
+**Usage (ask Claude Code in natural language):**
+```
+"Generate an image of a cute golden retriever puppy"
+"Make a diagram from design.md"
+"Change the sky in hero.png to a sunset"
 ```
 
-**With style and aspect ratio:**
+Claude Code builds the `codex exec` call itself - there is no wrapper script:
+
 ```bash
-python3 <skill_dir>/scripts/generate.py "Tokyo street at night" -s "anime style" -a 16:9 -o tokyo.png
+cd <output_dir>
+codex exec --sandbox workspace-write --skip-git-repo-check "<instruction>" < /dev/null
 ```
 
-**With negative prompt:**
-```bash
-python3 <skill_dir>/scripts/generate.py "a professional headshot" --negative "blurry, text, watermark" -o headshot.png
-```
+Style, aspect ratio, and negative prompts are expressed inside the instruction
+(e.g. `Style: watercolor painting. ... Use a wide landscape composition (16:9
+aspect ratio). Avoid: text, watermark.`).
 
 See [skills/codex-imagegen/SKILL.md](skills/codex-imagegen/SKILL.md) for full documentation and options.
 
