@@ -302,6 +302,11 @@ Style, aspect ratio, and negative prompts are expressed inside the instruction
 (e.g. `Style: watercolor painting. ... Use a wide landscape composition (16:9
 aspect ratio). Avoid: text, watermark.`).
 
+The Bash tool call must run with Claude Code's sandbox disabled
+(`dangerouslyDisableSandbox: true`): the sandbox blocks the network path used by
+`image_gen`, so image calls fail with `connection failed: error sending request`
+while plain-text `codex exec` calls still succeed.
+
 See [skills/codex-imagegen/SKILL.md](skills/codex-imagegen/SKILL.md) for full documentation and options.
 
 ### nanobanana Skill

@@ -44,6 +44,25 @@ Every *other* model then fails with `... is not supported when using Codex
 with a ChatGPT account`, which makes it look like a plan/entitlement
 problem. It is not. The token is simply stale.
 
+**A 404 is not always a stale token.** The same 404 also appears during
+transient upstream outages: every codex process on the machine starts
+failing at once — including other Claude Code sessions and runs that
+worked minutes earlier — and it clears on its own within ~10-15 minutes
+with no re-login and no change to `~/.codex/auth.json` (observed
+2026-09-10, ~10:11-10:22). Before asking the user to re-login, wait a
+few minutes and retry with one cheap text call:
+
+```bash
+codex exec --skip-git-repo-check "Reply with exactly: OK" < /dev/null
+```
+
+Concurrency and `CODEX_HOME` isolation are NOT causes. Parallel jobs
+with per-job `CODEX_HOME` (see "Parallel Generation") work — verified
+2026-09-10 with three simultaneous jobs, each producing the correct
+image in ~70 s total. A 404 that shows up during an outage window is the
+outage, not the isolation; do not "fix" it by dropping `CODEX_HOME` or
+switching to serial runs.
+
 Check the expiry before assuming anything else:
 
 ```bash
@@ -57,9 +76,9 @@ print('now:', datetime.datetime.now().isoformat())
 PY
 ```
 
-If `exp` is in the past, the fix is a re-login. It requires browser auth,
-so Claude Code cannot run it — ask the user to run it themselves in the
-prompt:
+If `exp` is in the past and the retry above still 404s, the fix is a
+re-login. It requires browser auth, so Claude Code cannot run it — ask the
+user to run it themselves in the prompt:
 
 ```
 ! codex login
@@ -81,7 +100,7 @@ cd <OUTPUT_DIR>
 codex exec --sandbox workspace-write --skip-git-repo-check "<INSTRUCTION>" < /dev/null
 ```
 
-Four non-obvious requirements, each from a real failure:
+Five non-obvious requirements, each from a real failure:
 
 - **`--sandbox workspace-write`, never `-s danger-full-access`.** Claude
   Code's auto-mode permission classifier blocks `danger-full-access`, so
@@ -98,6 +117,17 @@ Four non-obvious requirements, each from a real failure:
   specified.` Scratchpad directories are not git repos.
 - **`< /dev/null`.** Without it, codex blocks on
   `Reading additional input from stdin...` and never returns.
+- **Run the Bash tool call with `dangerouslyDisableSandbox: true`.**
+  Claude Code's own Bash sandbox blocks the network path `image_gen`
+  uses. Inside the sandbox, plain-text `codex exec` calls succeed, but
+  every image call fails after a few seconds with
+  `image generation failed: connection failed: error sending request`
+  and codex reports "the built-in image_gen tool failed with connection
+  errors". Reproduced twice on 2026-09-10; the identical command outside
+  the sandbox succeeded immediately. This is a Claude Code sandbox
+  restriction, not a codex problem — do not retry inside the sandbox,
+  re-login, or update codex. The `--sandbox workspace-write` flag above
+  is codex's own sandbox and stays as is.
 
 ---
 
@@ -387,7 +417,8 @@ See `references/prompts.md` for detailed prompting guidance.
 | Error | Solution |
 |---|---|
 | `codex CLI not found` | Install Codex CLI: `curl -fsSL https://chatgpt.com/codex/install.sh \| sh` |
-| `404 Not Found: The model ... does not exist or you do not have access to it` | The stored `id_token` expired. Ask the user to run `! codex login`. Do not switch models or update the CLI — neither fixes it (see "Authentication") |
+| `404 Not Found: The model ... does not exist or you do not have access to it` | Either a transient upstream outage or an expired `id_token`. Wait a few minutes and retry one cheap text call first; if it still 404s, ask the user to run `! codex login`. Not caused by parallel jobs or `CODEX_HOME` isolation. Do not switch models or update the CLI — neither fixes it (see "Authentication") |
+| `image generation failed: connection failed: error sending request` (text calls work, image calls fail in ~3 s) | The Bash tool call ran inside Claude Code's sandbox, which blocks `image_gen`'s network path. Rerun the same command with `dangerouslyDisableSandbox: true`. Not a codex, login, or version problem (see "Invocation contract") |
 | `The '<model>' model is not supported when using Codex with a ChatGPT account` | That model is not available to ChatGPT-account logins. Do not pass `-m`; let the configured default model apply |
 | `Not inside a trusted directory and --skip-git-repo-check was not specified` | Add `--skip-git-repo-check` to the `codex exec` call |
 | Command hangs on `Reading additional input from stdin...` | Append `< /dev/null` to the `codex exec` call |
