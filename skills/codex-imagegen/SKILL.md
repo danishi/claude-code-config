@@ -28,7 +28,40 @@ npm install -g @openai/codex
 
 Verify: `codex --version`
 
-### Authentication (check this FIRST when generation 404s)
+### A model 404 has THREE causes — try the cheap ones first
+
+`404 ... The model 'gpt-5.x' does not exist or you do not have access to it`
+is the error codex returns for several unrelated conditions. Work through
+them in this order:
+
+1. **The call set an isolated `CODEX_HOME`.** Per-job homes always fail
+   this way, even with a freshly copied `auth.json` (Reliability rule 3).
+   Drop `CODEX_HOME` and rerun.
+2. **A transient upstream failure.** Every codex process on the machine
+   starts 404ing at once — including runs that worked minutes earlier, and
+   other Claude Code sessions — then recovers on its own with no re-login
+   and no change to `~/.codex/auth.json`. Observed 2026-09-10: fine at
+   08:26, dead from ~10:11 to ~10:22 across two sessions, working again at
+   10:24 with `auth.json` untouched (mtime and `last_refresh` still two
+   days old). **Wait a few minutes and retry with one cheap text call**
+   before concluding anything:
+
+   ```bash
+   codex exec --skip-git-repo-check "Reply with exactly: OK" < /dev/null
+   ```
+
+3. **The stored login really is stale** — the case described below. Reach
+   for this only after a retry gap has failed too, because the fix costs
+   the user a browser round-trip.
+
+Concurrency is NOT a cause. Two `codex exec` processes against the default
+`~/.codex` do not break each other; a 404 that shows up while another job
+is running is case 2, not contention.
+
+**Do not report codex as broken, or switch to another image tool, on the
+strength of a single 404.** Retry once after a few minutes first.
+
+### Authentication
 
 `codex` runs on the ChatGPT account login stored in `~/.codex/auth.json`.
 The `id_token` expires roughly 10 hours after it is issued, and **an
@@ -44,7 +77,11 @@ Every *other* model then fails with `... is not supported when using Codex
 with a ChatGPT account`, which makes it look like a plan/entitlement
 problem. It is not. The token is simply stale.
 
-Check the expiry before assuming anything else:
+**A past `exp` is not proof of breakage.** codex refreshes the token on
+its own, and runs succeed with an `exp` that is days old while
+`last_refresh` in `auth.json` stays unchanged. Judge by running, not by the
+timestamp. Read the expiry only as one more clue after a real 404 with no
+competing codex process:
 
 ```bash
 python3 - <<'PY'
@@ -57,9 +94,10 @@ print('now:', datetime.datetime.now().isoformat())
 PY
 ```
 
-If `exp` is in the past, the fix is a re-login. It requires browser auth,
-so Claude Code cannot run it — ask the user to run it themselves in the
-prompt:
+A past `exp` alone does not justify a re-login — see case 2 above. When a
+retry gap has failed as well, the fix is a re-login. It requires browser
+auth, so Claude Code cannot run it — ask the user to run it themselves in
+the prompt:
 
 ```
 ! codex login
@@ -125,16 +163,20 @@ silently wrong images.
    macOS). If the mtime is old, the run skipped generation: delete the file
    and rerun with the MUST-generate phrasing above.
 
-3. **Isolate concurrent runs with per-job `CODEX_HOME`.** Parallel
-   `codex exec` jobs sharing the default `~/.codex` also share
-   `~/.codex/generated_images/`. A job whose generation fails may
-   "recover" by copying the newest file there, which can be ANOTHER job's
-   image, silently writing the wrong picture to the requested path.
-   Therefore: **when generating 2+ images, run them in parallel, each with
-   its own isolated `CODEX_HOME`** (see "Parallel Generation" below). This
-   removes the shared directory and makes parallelism safe. Never run
-   parallel jobs against the shared default home; if a past run did,
-   visually verify every output and rerun any duplicate solo.
+3. **Never set `CODEX_HOME`; generate serially against the default home.**
+   Per-job home isolation does NOT work: copying `auth.json` and
+   `config.toml` into `<SCRATCHPAD>/codex-job-N` and running with
+   `CODEX_HOME=` there fails every job with `The model ... does not exist
+   or you do not have access to it`. Confirmed independently in two
+   sessions. Since isolation is the only thing that made parallel runs
+   safe, **generate images one at a time** (see "Serial Generation"
+   below).
+
+   The cost of sharing the default home is that
+   `~/.codex/generated_images/` is shared across runs. A job whose
+   generation fails may "recover" by copying the newest file there — which
+   can be an image from an earlier job. Serial execution plus Reliability
+   rules 2 and 4 (fresh mtime + visual check) is what catches that.
 
 4. **Visually inspect every generated image before using it** (open/Read
    the PNG). Check for: garbled or misspelled text (especially Japanese),
@@ -286,43 +328,49 @@ ls -t ~/.codex/generated_images/*.png 2>/dev/null | head -1
 
 ---
 
-## Multiple Images / Parallel Generation
+## Multiple Images / Serial Generation
 
-**Default to parallel execution when generating 2+ images.** Serial
-execution is only for retries of a single failed image. Parallelism is
-safe as long as every job gets its own isolated `CODEX_HOME`
-(cross-contamination — Reliability rule 3 — only happens through the
-shared `~/.codex/generated_images/` directory).
+**Generate images one at a time, in a single background job.** Parallelism
+is not available here: it requires per-job `CODEX_HOME` isolation, and an
+isolated home fails with the model 404 (Reliability rule 3).
+A 16:9 image takes roughly 1-2 minutes, so a 5-image batch is a ~10 minute
+background run — write it as ONE script and let it work, rather than one
+Bash call per image.
 
 ### Recipe
 
-For each image `i`, prepare an isolated home and launch the job in the
-background (use the Bash tool's `run_in_background`, one call per image):
+Write a script to the scratchpad and launch it with the Bash tool's
+`run_in_background` (one call for the whole batch):
 
 ```bash
-JOB=<SCRATCHPAD>/codex-job-<i>
-mkdir -p "$JOB"
-cp ~/.codex/auth.json ~/.codex/config.toml "$JOB/"
-cd <OUTPUT_DIR>
-rm -f <OUTPUT_FILE_i>
-CODEX_HOME="$JOB" codex exec --sandbox workspace-write --skip-git-repo-check \
-  "The file <OUTPUT_FILE_i> in the current working directory does not exist yet. You MUST generate a brand-new image using the built-in image_gen tool and save it to that exact path. Do not reuse or copy any previously generated image. Image prompt: <PROMPT_i>" < /dev/null
+#!/bin/zsh
+# Serial generation, default CODEX_HOME. Isolated homes hit the model 404.
+run() {
+  OUT="$1"; FILE="$2"; PROMPT="$3"
+  cd "$OUT" && rm -f "$FILE"; START=$(date +%s)
+  codex exec --sandbox workspace-write --skip-git-repo-check \
+    "The file $FILE in the current working directory does not exist yet. You MUST generate a brand-new image using the built-in image_gen tool and save it to that exact path. Do not reuse or copy any previously generated image. Image prompt: $PROMPT" \
+    < /dev/null > "$OUT/.gen-$FILE.log" 2>&1
+  if [ -f "$OUT/$FILE" ] && [ $(stat -f %m "$OUT/$FILE") -ge $START ]; then
+    echo "OK $OUT/$FILE"
+  else
+    echo "MISSING $OUT/$FILE"; tail -3 "$OUT/.gen-$FILE.log"
+  fi
+}
+run <OUTPUT_DIR> <FILE_1> "<PROMPT_1>"
+run <OUTPUT_DIR> <FILE_2> "<PROMPT_2>"
+echo ALL-DONE
 ```
 
-- `auth.json` carries the login; `config.toml` carries user settings.
-  Copying both into the job home is enough — no re-login needed. Copy
-  `auth.json` fresh at launch time: a copy taken from an already-expired
-  token fails every job with the model 404 described under
-  "Authentication".
-- Launch ALL jobs first, then wait for completions; do not run them one
-  by one.
-- After each job finishes, apply Reliability rules 2 and 4 to its output
-  (fresh mtime + visual inspection). Recovery lookups for that job go to
-  `$JOB/generated_images/`, NOT `~/.codex/generated_images/`.
-- If a job fails auth (stale token copy), re-copy a fresh
-  `~/.codex/auth.json` into its home and rerun that job alone.
-- Delete the job homes (`rm -rf <SCRATCHPAD>/codex-job-*`) after all
-  outputs are verified.
+- Put the shared style, aspect-ratio, and negative-prompt strings in shell
+  variables and interpolate them into each `run` call, so every image in a
+  set shares one visual language.
+- Each `run` reports `OK` or `MISSING` with a fresh-mtime check, so the
+  final output tells you which images need a rerun without reading logs.
+- After the batch, apply Reliability rule 4 to every output: open each PNG
+  and look at it. Recovery lookups land in `~/.codex/generated_images/`,
+  so a `MISSING` job may have left another job's image behind.
+- Rerun any failed image alone.
 
 ---
 
@@ -387,7 +435,7 @@ See `references/prompts.md` for detailed prompting guidance.
 | Error | Solution |
 |---|---|
 | `codex CLI not found` | Install Codex CLI: `curl -fsSL https://chatgpt.com/codex/install.sh \| sh` |
-| `404 Not Found: The model ... does not exist or you do not have access to it` | The stored `id_token` expired. Ask the user to run `! codex login`. Do not switch models or update the CLI — neither fixes it (see "Authentication") |
+| `404 Not Found: The model ... does not exist or you do not have access to it` | If the call set `CODEX_HOME`, drop it and rerun. Otherwise retry once after a few minutes — this error is often a transient upstream failure that clears on its own. Only if the retry also fails is the login stale: ask the user to run `! codex login`. It is not caused by another codex process running. Do not switch models or update the CLI — neither fixes it (see "A model 404 has THREE causes") |
 | `The '<model>' model is not supported when using Codex with a ChatGPT account` | That model is not available to ChatGPT-account logins. Do not pass `-m`; let the configured default model apply |
 | `Not inside a trusted directory and --skip-git-repo-check was not specified` | Add `--skip-git-repo-check` to the `codex exec` call |
 | Command hangs on `Reading additional input from stdin...` | Append `< /dev/null` to the `codex exec` call |
@@ -397,6 +445,6 @@ See `references/prompts.md` for detailed prompting guidance.
 | `No images were generated` | Rephrase the prompt; it may have been blocked by safety filters |
 | `Image not at expected path` | Check `~/.codex/generated_images/` manually (see recovery warning) |
 | Output file unchanged (old mtime) | Codex skipped generation because the file already existed. Delete the file and rerun with the "does not exist yet / MUST generate" phrasing |
-| Output duplicates another parallel job's image | Cross-contamination via a shared `generated_images/` — the jobs were run without isolated `CODEX_HOME`. Delete the file and rerun that image alone (or rerun all jobs with per-job `CODEX_HOME`) |
+| Output duplicates an earlier job's image | Recovery cross-contamination via the shared `~/.codex/generated_images/`. Delete the file and rerun that image alone. Do not reach for `CODEX_HOME` isolation — it 404s |
 | Parallel job fails with auth error | The copied `auth.json` went stale. Re-copy a fresh `~/.codex/auth.json` into that job's home and rerun it alone |
 | Broken arrows / wobbly lines in diagrams | Simplify the composition per "Diagram & infographic quality": straight short arrows only, no curves, generous spacing, then regenerate |
