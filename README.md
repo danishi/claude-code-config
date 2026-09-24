@@ -92,12 +92,13 @@ AI music generation using Google Gemini Lyria 3:
 
 ### gemini-tts Skill
 
-AI text-to-speech (read-aloud) using Google Gemini TTS (`gemini-3.1-flash-tts-preview`):
+AI text-to-speech (read-aloud) using Google Gemini 3.8 TTS:
 
+- **Auto Model Selection** - Gemini 3.8 Flash TTS for expressive narration / dialogue, Gemini 3.8 Flash-Lite TTS for long-form / bulk read-aloud (`--flash` / `--lite` to override)
 - **Auto Mode Detection** - Single-speaker narration for plain text, multi-speaker for 2-person dialogue
 - **30 Prebuilt Voices** - Choose by characteristic (bright, warm, firm, youthful, etc.)
 - **Multi-speaker Dialogue** - Maps `Name:` labels to distinct voices (up to 2 speakers)
-- **Style Control** - Natural-language prefixes (`Say cheerfully:`) and 200+ inline audio tags
+- **Style Control** - Structured styles (`--style`, per-speaker `--speaker-style`) and inline vocal tags (`<sigh>`, `<laughs>`)
 - **Flexible Input** - Read from a command argument or a text file (`-f`)
 - **WAV Output** - 16-bit, 24 kHz mono WAV (PCM auto-wrapped)
 - **Voice Reference** - Built-in voice list and style / audio-tag guide
@@ -363,7 +364,7 @@ See [skills/lyria/SKILL.md](skills/lyria/SKILL.md) for full documentation and op
 
 **Prerequisites:**
 ```bash
-pip install google-genai
+pip install -U google-genai
 export GEMINI_API_KEY="your-api-key"  # Get from https://aistudio.google.com/apikey
 ```
 
@@ -372,9 +373,14 @@ export GEMINI_API_KEY="your-api-key"  # Get from https://aistudio.google.com/api
 python3 <skill_dir>/scripts/generate.py "Have a wonderful day!" --voice Puck -o hello.wav
 ```
 
-**Read a file with a style prefix:**
+**Read a file with a style:**
 ```bash
-python3 <skill_dir>/scripts/generate.py -f article.txt --style "in a calm voice" -o article.wav
+python3 <skill_dir>/scripts/generate.py -f article.txt --style "calm and slow" -o article.wav
+```
+
+**Bulk / long-form read-aloud with Flash-Lite:**
+```bash
+python3 <skill_dir>/scripts/generate.py -f book.txt --lite -o book.wav
 ```
 
 **Multi-speaker dialogue (auto-detected from `Name:` labels):**

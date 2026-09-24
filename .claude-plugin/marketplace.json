@@ -38,7 +38,7 @@
     },
     {
       "name": "gemini-tts",
-      "description": "Generate read-aloud audio (text-to-speech) using Google Gemini TTS (gemini-3.1-flash-tts-preview). Auto-detects single-speaker narration vs 2-person multi-speaker dialogue from the input. Supports 30 prebuilt voices, natural-language style control and audio tags, text or file input, and WAV output.",
+      "description": "Generate read-aloud audio (text-to-speech) using Google Gemini 3.8 TTS. Auto-selects the model by purpose: Gemini 3.8 Flash TTS for expressive narration and dialogue, Gemini 3.8 Flash-Lite TTS for long-form / bulk read-aloud. Auto-detects single-speaker narration vs 2-person multi-speaker dialogue from the input. Supports 30 prebuilt voices, structured style control and inline vocal tags, text or file input, and WAV output.",
       "source": "./skills/gemini-tts",
       "category": "ai-tools"
     },

@@ -40,67 +40,57 @@ Voice names are case-insensitive in the script.
 | Zubenelgenubi | Casual |
 
 > The characteristic labels are baseline guides; actual delivery is also shaped
-> by the prompt, style prefix, and audio tags.
+> by the style and inline vocal tags.
+
+Beyond these 30, voice IDs from the Extended Voice Library and custom voice IDs
+(`voice_...` / `voicekey_...`) can be passed to `--voice` as-is
+(single-speaker only).
 
 ---
 
 ## Style Control
 
-### Natural-language prefix
+Gemini 3.8 TTS treats the input text strictly as a **verbatim transcript** —
+everything in the text is read aloud. Direction goes in two places instead.
 
-Prepend an instruction describing the desired delivery:
+### Sustained style (`speech_metadata.style`)
 
-```
-Say cheerfully: Have a wonderful day!
-Read this slowly and calmly: Take a deep breath, and relax.
-Announce dramatically: And the winner is...
-```
-
-The `--style` flag is a shortcut that prepends `Say <style>: ` for
-single-speaker mode:
+Describe the overall delivery with `--style`. The script sends it as
+structured metadata, not as text:
 
 ```bash
-python scripts/generate.py "Welcome aboard!" --style cheerfully
+python scripts/generate.py "Have a wonderful day!" --style "cheerful and friendly"
+python scripts/generate.py -f story.txt --style "calm, slow, documentary narrator"
 ```
 
-### Audio tags (inline)
+Do **not** write `Say cheerfully: ...` in the text; it would be spoken.
 
-Insert bracketed tags directly into the text to steer delivery mid-sentence
-(200+ supported). Common examples:
+### Inline vocal tags (point-in-time)
+
+Insert angle-bracket tags directly into the text for momentary vocalizations
+(angle brackets give the highest audio quality):
 
 ```
-[whispers]      [shouting]     [excitedly]    [sarcastically]
-[laughs]        [sighs]        [nervously]    [slowly]
+<sigh>      <laughs>      <cough>      <short pause>
 ```
 
 Example:
 
 ```
-[whispers] I have a secret... [excitedly] and I can finally tell you!
-```
-
-### Advanced structured prompting
-
-For fine-grained control, structure the prompt with directorial notes:
-
-```
-Audio Profile: a seasoned documentary narrator, deep and measured.
-Scene: a quiet nature reserve at dawn.
-Director's Notes: Style = contemplative; Pacing = slow; Accent = neutral British.
-
-Transcript:
-The first light touches the canopy, and the forest begins to wake.
+I have a secret... <short pause> and I can finally tell you! <laughs>
 ```
 
 ---
 
 ## Multi-Speaker Dialogue
 
-- Label each line `Name: text`.
+- Label each line `Name: text` (the label is not read aloud).
 - Use **exactly 2** distinct speakers (hard limit).
-- Speaker names in the text must match the `--speaker "Name:Voice"` mappings.
+- Speaker names in the text must match the `--speaker "Name:Voice"` and
+  `--speaker-style "Name:Style"` mappings.
 - If you omit `--speaker`, default voices are assigned in first-seen order
   (`Kore`, then `Puck`).
+- `--style` applies to speakers without their own `--speaker-style`.
 
 Example `dialogue.txt`:
 
@@ -112,14 +102,16 @@ Taro: Pretty good — excited for the trip!
 
 ```bash
 python scripts/generate.py -f dialogue.txt \
-  --speaker "Taro:Charon" --speaker "Hanako:Leda" -o conversation.wav
+  --speaker "Taro:Charon" --speaker "Hanako:Leda" \
+  --speaker-style "Taro:excited" --speaker-style "Hanako:calm and relaxed" \
+  -o conversation.wav
 ```
 
-You can still apply audio tags per line:
+You can still apply vocal tags per line:
 
 ```
-Taro: [excitedly] We're finally going!
-Hanako: [laughs] I can't wait.
+Taro: We're finally going! <laughs>
+Hanako: <sigh> I can't wait.
 ```
 
 ---
@@ -127,10 +119,12 @@ Hanako: [laughs] I can't wait.
 ## Tips
 
 - **Match language to text** — write the transcript in the language you want
-  spoken (70+ languages supported).
+  spoken (Flash: 130 languages, Flash-Lite: 101).
 - **Pick voice by role** — informative narration (`Charon`, `Rasalgethi`),
   warm/friendly (`Sulafat`, `Achird`), youthful (`Leda`), firm/authoritative
   (`Kore`, `Alnilam`).
-- **Long text** — read from a file with `-f` to avoid shell-escaping issues.
+- **Long text** — read from a file with `-f` to avoid shell-escaping issues;
+  2,000+ characters with no style or vocal tags auto-selects Flash-Lite
+  (`--flash` to override).
 - **Avoid impersonation** — describe a voice style rather than naming a real
   person; voice-cloning requests are blocked.

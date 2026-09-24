@@ -9,14 +9,24 @@ Generates read-aloud audio that matches the input.  The mode is
   - Multi-speaker   : a 2-person dialogue ("Name: ..."    -> two voices
                       lines with exactly two speakers)
 
-Model: gemini-3.1-flash-tts-preview (single TTS model; no Pro variant).
+The model is **automatically selected** by purpose:
+
+  - Gemini 3.8 Flash TTS      (gemini-3.8-flash-tts)      : expressive
+      narration, dialogue, styled delivery (default)
+  - Gemini 3.8 Flash-Lite TTS (gemini-3.8-flash-lite-tts) : long-form /
+      bulk read-aloud without expressive direction (fast, cost-efficient)
+
+Gemini 3.8 TTS models treat the input as a verbatim transcript: delivery
+direction goes into structured ``speech_metadata`` (style / speaker), and
+point-in-time vocalizations use inline angle-bracket tags (e.g. ``<sigh>``).
 Supports both Gemini Developer API and Vertex AI API platforms.
 
 Usage:
     python generate.py "Have a wonderful day!" -o hello.wav
-    python generate.py "Say cheerfully: Welcome aboard!" --voice Puck
+    python generate.py "Welcome aboard!" --voice Puck --style "cheerful and friendly"
     python generate.py -f dialogue.txt -o conversation.wav
     python generate.py -f dialogue.txt --speaker "Taro:Kore" --speaker "Hanako:Puck"
+    python generate.py -f article.txt --lite -o article.wav
 
 Environment Variables:
     Gemini Developer API:
@@ -27,7 +37,7 @@ Environment Variables:
         GOOGLE_CLOUD_LOCATION - GCP region (default: us-central1)
 
     Common:
-        TTS_MODEL         - Force a specific model (overrides the default)
+        TTS_MODEL         - Force a specific model (overrides auto-selection)
         AUDIO_OUTPUT_DIR  - Default output directory (default: ./gemini-tts)
 """
 
@@ -50,7 +60,15 @@ except ImportError:
     print("Install with: pip install google-genai", file=sys.stderr)
     sys.exit(1)
 
-MODEL_TTS = "gemini-3.1-flash-tts-preview"
+MODEL_FLASH = "gemini-3.8-flash-tts"
+MODEL_LITE = "gemini-3.8-flash-lite-tts"
+
+# Inputs at least this long (characters) with no expressive direction are
+# treated as bulk read-aloud and routed to Flash-Lite.
+_LITE_TEXT_LENGTH = 2000
+
+# Inline vocal tags such as <sigh> or <short pause> signal expressive acting.
+_VOCAL_TAG_RE = re.compile(r"<[A-Za-z][A-Za-z -]{0,30}>")
 
 # 30 prebuilt voices. See references/voices.md for characteristics.
 VALID_VOICES = [
@@ -171,6 +189,8 @@ def create_client(no_ssl_verify: bool = False) -> genai.Client:
 #   - Half-width colon ":"  : a following space is required, so timestamps
 #                             like "10:30" are not mistaken for speakers.
 _SPEAKER_RE = re.compile(r"^\s*([^\n:：。．！？!?]{1,24})(?:：\s*|:\s+)\S")
+# A label alone on its line ("Taro:"), with the speech on the next lines.
+_LABEL_ONLY_RE = re.compile(r"^\s*([^\n:：。．！？!?]{1,24})[:：]\s*$")
 
 
 def detect_speakers(text: str) -> list[str]:
@@ -182,7 +202,7 @@ def detect_speakers(text: str) -> list[str]:
     """
     speakers: list[str] = []
     for line in text.splitlines():
-        m = _SPEAKER_RE.match(line)
+        m = _SPEAKER_RE.match(line) or _LABEL_ONLY_RE.match(line)
         if m:
             name = m.group(1).strip()
             if name and name not in speakers:
@@ -191,16 +211,111 @@ def detect_speakers(text: str) -> list[str]:
 
 
 def resolve_voice(name: str) -> str:
-    """Validate / normalize a voice name (case-insensitive)."""
+    """Validate / normalize a voice name (case-insensitive).
+
+    Custom voice IDs (``voice_...`` / ``voicekey_...``) are passed through
+    unchanged.  Other unknown names are passed through with a warning, since
+    they may come from the Extended Voice Library.
+    """
     for v in VALID_VOICES:
         if v.lower() == name.lower():
             return v
+    if name.startswith(("voice_", "voicekey_")):
+        return name
     print(
-        f"Warning: '{name}' is not a known voice. Valid voices: "
-        f"{', '.join(VALID_VOICES)}",
+        f"Warning: '{name}' is not a prebuilt voice (using it as-is). "
+        f"Prebuilt voices: {', '.join(VALID_VOICES)}",
         file=sys.stderr,
     )
     return name
+
+
+def select_model(
+    text: str,
+    mode: str,
+    style: str | None = None,
+    force_flash: bool = False,
+    force_lite: bool = False,
+) -> str:
+    """Select the TTS model based on the request / purpose.
+
+    The TTS_MODEL env var overrides auto-selection.
+
+    Selection criteria:
+      - ``force_flash`` (--flash) -> always Flash
+      - ``force_lite`` (--lite)   -> always Flash-Lite
+      - Multi-speaker dialogue, a style, or inline vocal tags -> Flash
+      - Input of 2000+ characters (bulk read-aloud) -> Flash-Lite
+      - Default -> Flash (highest fidelity for short narration)
+    """
+    override = os.environ.get("TTS_MODEL")
+    if override:
+        return override
+
+    if force_flash:
+        return MODEL_FLASH
+    if force_lite:
+        return MODEL_LITE
+
+    is_expressive = mode == "multi" or bool(style) or bool(
+        _VOCAL_TAG_RE.search(text)
+    )
+    if is_expressive:
+        return MODEL_FLASH
+
+    return MODEL_LITE if len(text) >= _LITE_TEXT_LENGTH else MODEL_FLASH
+
+
+def build_parts(
+    text: str,
+    mode: str,
+    speakers: list[str],
+    style: str | None,
+    speaker_styles: dict[str, str] | None,
+) -> list["types.Part"]:
+    """Split the input into transcript parts with ``speech_metadata``.
+
+    Gemini 3.8 TTS reads each part verbatim, so speaker labels are moved out
+    of the text into ``speech_metadata.speaker`` and styles into
+    ``speech_metadata.style``.  In multi-speaker mode, lines without a
+    speaker label are appended to the preceding speaker's part.
+    """
+    if mode == "single":
+        metadata = types.SpeechMetadata(style=style) if style else None
+        return [types.Part(text=text.strip(), speech_metadata=metadata)]
+
+    speaker_styles = speaker_styles or {}
+    turns: list[list[str]] = []  # [speaker, text]
+    for line in text.splitlines():
+        m = _SPEAKER_RE.match(line)
+        name = m.group(1).strip() if m else None
+        label_only = _LABEL_ONLY_RE.match(line)
+        if name in speakers:
+            body = line[m.end() - 1:].strip()
+            turns.append([name, body])
+        elif label_only and label_only.group(1).strip() in speakers:
+            turns.append([label_only.group(1).strip(), ""])
+        elif line.strip():
+            if turns:
+                turns[-1][1] = (turns[-1][1] + "\n" + line.strip()).strip()
+            else:
+                # Text before the first label goes to the first speaker.
+                turns.append([speakers[0], line.strip()])
+
+    parts = []
+    for name, body in turns:
+        if not body:
+            continue
+        turn_style = speaker_styles.get(name) or style
+        parts.append(
+            types.Part(
+                text=body,
+                speech_metadata=types.SpeechMetadata(
+                    speaker=name, style=turn_style
+                ),
+            )
+        )
+    return parts
 
 
 def parse_audio_mime_type(mime_type: str) -> dict:
@@ -213,15 +328,15 @@ def parse_audio_mime_type(mime_type: str) -> dict:
     rate = 24000
 
     for param in mime_type.split(";"):
-        param = param.strip()
-        if param.lower().startswith("rate="):
+        param = param.strip().lower()
+        if param.startswith("rate="):
             try:
                 rate = int(param.split("=", 1)[1])
             except (ValueError, IndexError):
                 pass
-        elif param.startswith("audio/L"):
+        elif param.startswith("audio/l"):
             try:
-                bits_per_sample = int(param.split("L", 1)[1])
+                bits_per_sample = int(param.split("l", 1)[1])
             except (ValueError, IndexError):
                 pass
 
@@ -231,9 +346,12 @@ def parse_audio_mime_type(mime_type: str) -> dict:
 def convert_to_wav(audio_data: bytes, mime_type: str) -> bytes:
     """Wrap raw PCM audio data in a WAV (RIFF) header.
 
-    Gemini TTS returns raw PCM (e.g. "audio/L16;rate=24000") which needs a
-    WAV header to be playable as a .wav file.  http://soundfile.sapp.org/doc/WaveFormat/
+    Streaming Gemini TTS returns headerless raw PCM (e.g. "audio/l16") which
+    needs a WAV header to be playable as a .wav file.  Data that already has
+    a RIFF header is returned unchanged.  http://soundfile.sapp.org/doc/WaveFormat/
     """
+    if audio_data[:4] == b"RIFF":
+        return audio_data
     params = parse_audio_mime_type(mime_type)
     bits_per_sample = params["bits_per_sample"]
     sample_rate = params["rate"]
@@ -270,8 +388,8 @@ def build_speech_config(
     force_single: bool,
     force_multi: bool,
     verbose: bool,
-) -> tuple["types.SpeechConfig", str]:
-    """Build the SpeechConfig and return (config, mode).
+) -> tuple["types.SpeechConfig", str, list[str]]:
+    """Build the SpeechConfig and return (config, mode, speakers).
 
     Mode is "single" or "multi".  Multi-speaker is auto-detected from the
     input unless overridden by force_single / force_multi.
@@ -324,17 +442,13 @@ def build_speech_config(
                 speaker_voice_configs=configs
             )
         )
-        return speech_config, "multi"
+        return speech_config, "multi", speakers
 
     voice = resolve_voice(voice)
     if verbose:
         print(f"Voice: {voice}")
-    speech_config = types.SpeechConfig(
-        voice_config=types.VoiceConfig(
-            prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=voice)
-        )
-    )
-    return speech_config, "single"
+    speech_config = types.SpeechConfig(voice_config=types.VoiceConfig(voice=voice))
+    return speech_config, "single", []
 
 
 def generate_speech(
@@ -343,9 +457,12 @@ def generate_speech(
     voice: str = DEFAULT_VOICE,
     speaker_map: dict[str, str] | None = None,
     style: str | None = None,
-    temperature: float = 1.0,
+    speaker_styles: dict[str, str] | None = None,
+    temperature: float | None = None,
     force_single: bool = False,
     force_multi: bool = False,
+    force_flash: bool = False,
+    force_lite: bool = False,
     verbose: bool = False,
     no_ssl_verify: bool = False,
 ) -> dict:
@@ -356,11 +473,16 @@ def generate_speech(
         output_path:    Where to save the audio (.wav).
         voice:          Voice name for single-speaker mode.
         speaker_map:    {speaker_label: voice_name} for multi-speaker mode.
-        style:          Optional style prefix (e.g. "cheerfully") for single
-                        speaker; prepended as "Say {style}: ".
-        temperature:    Sampling temperature (default 1.0).
+        style:          Optional delivery style (e.g. "cheerful and friendly"),
+                        sent as speech_metadata.style.  In multi-speaker
+                        mode it is the default for speakers without their
+                        own style.
+        speaker_styles: {speaker_label: style} for multi-speaker mode.
+        temperature:    Sampling temperature (model default if None).
         force_single:   Force single-speaker mode.
         force_multi:    Force multi-speaker mode.
+        force_flash:    Force Gemini 3.8 Flash TTS.
+        force_lite:     Force Gemini 3.8 Flash-Lite TTS.
         verbose:        Print progress information.
         no_ssl_verify:  Disable SSL certificate verification.
 
@@ -379,10 +501,9 @@ def generate_speech(
         }
 
     client = create_client(no_ssl_verify=no_ssl_verify)
-    model = os.environ.get("TTS_MODEL", MODEL_TTS)
 
     try:
-        speech_config, mode = build_speech_config(
+        speech_config, mode, speakers = build_speech_config(
             text=text,
             voice=voice,
             speaker_map=speaker_map,
@@ -400,12 +521,19 @@ def generate_speech(
             "metadata": None,
         }
 
-    prompt_text = text
-    if style and mode == "single":
-        prompt_text = f"Say {style}: {text}"
+    model = select_model(
+        text=text,
+        mode=mode,
+        style=style,
+        force_flash=force_flash,
+        force_lite=force_lite,
+    )
 
     contents = [
-        types.Content(role="user", parts=[types.Part.from_text(text=prompt_text)]),
+        types.Content(
+            role="user",
+            parts=build_parts(text, mode, speakers, style, speaker_styles),
+        ),
     ]
 
     generate_config = types.GenerateContentConfig(
@@ -455,8 +583,8 @@ def generate_speech(
             }
 
         raw = b"".join(audio_chunks)
-        # Gemini TTS returns raw PCM (e.g. audio/L16;rate=24000); wrap in WAV.
-        wav_bytes = convert_to_wav(raw, mime_type or "audio/L16;rate=24000")
+        # Streaming returns raw PCM (audio/l16, 24 kHz); wrap in WAV.
+        wav_bytes = convert_to_wav(raw, mime_type or "audio/l16;rate=24000")
 
         with open(output_path, "wb") as f:
             f.write(wav_bytes)
@@ -495,15 +623,18 @@ def generate_speech(
         }
 
 
-def _parse_speaker_args(items: list[str] | None) -> dict[str, str]:
-    """Parse repeated --speaker "Name:Voice" args into a mapping."""
+def _parse_speaker_args(
+    items: list[str] | None, flag: str = "--speaker", value: str = "Voice"
+) -> dict[str, str]:
+    """Parse repeated "Name:Value" args (--speaker / --speaker-style)."""
     mapping: dict[str, str] = {}
     if not items:
         return mapping
     for item in items:
+        item = item.replace("：", ":", 1)
         if ":" not in item:
             print(
-                f"Warning: ignoring --speaker '{item}' (expected 'Name:Voice').",
+                f"Warning: ignoring {flag} '{item}' (expected 'Name:{value}').",
                 file=sys.stderr,
             )
             continue
@@ -521,9 +652,10 @@ def main() -> None:
         epilog="""\
 Examples:
   %(prog)s "Have a wonderful day!" -o hello.wav
-  %(prog)s "Welcome aboard!" --voice Puck --style cheerfully
+  %(prog)s "Welcome aboard!" --voice Puck --style "cheerful and friendly"
   %(prog)s -f dialogue.txt -o conversation.wav
   %(prog)s -f dialogue.txt --speaker "Taro:Kore" --speaker "Hanako:Puck"
+  %(prog)s -f article.txt --lite -o article.wav
 """,
     )
 
@@ -539,12 +671,24 @@ Examples:
         help='Multi-speaker voice mapping "Name:Voice" (repeatable)',
     )
     parser.add_argument(
-        "--style",
-        help='Style prefix for single-speaker (e.g. "cheerfully", "in a calm voice")',
+        "--speaker-style", action="append", dest="speaker_styles",
+        help='Multi-speaker style mapping "Name:Style" (repeatable)',
     )
     parser.add_argument(
-        "--temperature", type=float, default=1.0,
-        help="Sampling temperature (default: 1.0)",
+        "--style",
+        help='Delivery style (e.g. "cheerful and friendly", "calm and slow")',
+    )
+    parser.add_argument(
+        "--temperature", type=float,
+        help="Sampling temperature (default: model default)",
+    )
+    parser.add_argument(
+        "--flash", action="store_true",
+        help="Force Gemini 3.8 Flash TTS (expressive, highest fidelity)",
+    )
+    parser.add_argument(
+        "--lite", action="store_true",
+        help="Force Gemini 3.8 Flash-Lite TTS (fast, cost-efficient)",
     )
     parser.add_argument(
         "--single", action="store_true",
@@ -581,6 +725,10 @@ Examples:
         print("Error: --single and --multi are mutually exclusive.", file=sys.stderr)
         sys.exit(2)
 
+    if args.flash and args.lite:
+        print("Error: --flash and --lite are mutually exclusive.", file=sys.stderr)
+        sys.exit(2)
+
     # Resolve input text from positional arg or file.
     if args.file:
         try:
@@ -600,9 +748,14 @@ Examples:
         voice=args.voice,
         speaker_map=_parse_speaker_args(args.speakers),
         style=args.style,
+        speaker_styles=_parse_speaker_args(
+            args.speaker_styles, "--speaker-style", "Style"
+        ),
         temperature=args.temperature,
         force_single=args.single,
         force_multi=args.multi,
+        force_flash=args.flash,
+        force_lite=args.lite,
         verbose=args.verbose or (args.output is None and not args.json_output),
         no_ssl_verify=args.no_ssl_verify,
     )
