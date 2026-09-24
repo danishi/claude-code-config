@@ -93,6 +93,8 @@ python <gemini-tts>/scripts/generate.py \
 - One file per narrated scene; set the scene's `durationInFrames` to comfortably
   fit the narration (measure the WAV length, then `frames = ceil(seconds*fps)`).
 - For dialogue, gemini-tts auto-detects multi-speaker from `Name:` lines.
+- The text is read verbatim: put delivery direction in `--style` (not in the
+  text), and use `<sigh>`-style tags for momentary vocalizations.
 
 ## Wiring assets into props.json
 
