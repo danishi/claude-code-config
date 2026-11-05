@@ -3,8 +3,8 @@
 Nano Banana - AI Image Generation using Google Gemini
 
 Automatically selects the best model based on prompt complexity:
-  - Nano Banana Pro  (gemini-3-pro-image-preview)    : complex prompts
-  - Nano Banana 2    (gemini-3.1-flash-image-preview) : simple prompts
+  - Nano Banana Pro  (gemini-3-pro-image)     : complex prompts
+  - Nano Banana 2.1  (gemini-nano-banana-2.1) : simple prompts
 
 Supports both Gemini Developer API and Vertex AI API platforms.
 
@@ -43,8 +43,8 @@ except ImportError:
     print("Install with: pip install google-genai Pillow", file=sys.stderr)
     sys.exit(1)
 
-MODEL_PRO = "gemini-3-pro-image-preview"
-MODEL_FLASH = "gemini-3.1-flash-image-preview"
+MODEL_PRO = "gemini-3-pro-image"
+MODEL_FLASH = "gemini-nano-banana-2.1"
 
 # Thresholds for auto-selecting Nano Banana Pro
 _COMPLEXITY_PROMPT_LENGTH = 100
@@ -169,7 +169,7 @@ def select_model(
 ) -> str:
     """Select the best model based on prompt complexity.
 
-    Returns Nano Banana Pro for complex requests and Nano Banana 2 for
+    Returns Nano Banana Pro for complex requests and Nano Banana 2.1 for
     simple ones.  The NANOBANANA_MODEL env var overrides auto-selection.
 
     Complexity criteria (any one triggers Pro):

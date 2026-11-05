@@ -70,7 +70,7 @@ AI image generation using Codex CLI's built-in image_gen tool:
 
 ### nanobanana Skill
 
-AI image generation using Google Gemini (Nano Banana Pro / Nano Banana 2):
+AI image generation using Google Gemini (Nano Banana Pro / Nano Banana 2.1):
 
 - **Text-to-Image** - Generate images from text prompts
 - **Image Editing** - Transform existing images with natural language instructions
@@ -81,13 +81,13 @@ AI image generation using Google Gemini (Nano Banana Pro / Nano Banana 2):
 
 ### lyria Skill
 
-AI music generation using Google Gemini Lyria 3:
+AI music generation using Google Gemini Lyria (Lyria 3.5 / Lyria 3 Clip):
 
-- **Auto Model Selection** - Picks Lyria 3 Pro or Clip based on the request / purpose
-- **Lyria 3 Pro** - Full-length songs (≈ a couple of minutes) with verses, choruses, bridges, and lyrics
+- **Auto Model Selection** - Picks Lyria 3.5 or Clip based on the request / purpose
+- **Lyria 3.5** - Full-length songs (≈ a couple of minutes) with verses, choruses, bridges, and lyrics
 - **Lyria 3 Clip** - 30-second clips, loops, jingles, and quick previews (fast iteration)
 - **Rich Prompting** - Genre, mood, instruments, tempo, vocals, and song-structure tags
-- **Output Formats** - MP3 (default) and WAV (Pro), 48 kHz stereo
+- **Output Formats** - MP3 (default) and WAV (Lyria 3.5), stereo
 - **Prompt Reference** - Built-in prompt templates by genre and song structure
 
 ### gemini-tts Skill
@@ -105,9 +105,10 @@ AI text-to-speech (read-aloud) using Google Gemini 3.8 TTS:
 
 ### veo Skill
 
-AI video generation using Google Gemini Veo 3.1:
+AI video generation using Google Veo 3.1 on Vertex AI:
 
-- **Cost-First Default** - Uses the cost-effective Veo 3.1 Lite model unless `--pro` / `--fast` is explicitly given
+- **GA Default** - Uses the GA Veo 3.1 Fast model (`veo-3.1-fast-generate-001`); the premium (`--pro`) and cheapest Lite (`--lite`, Preview) models are opt-in
+- **Vertex AI Only** - The Gemini Developer API no longer serves Veo (the `veo-3.1-*-generate-preview` models were shut down on 2026-10-22)
 - **Text-to-Video** - Generate clips from a text prompt
 - **Image-to-Video** - Animate a starting frame, with an optional last-frame constraint
 - **Cinematic Control** - Aspect ratio (16:9 / 9:16), resolution (720p / 1080p, 4k on Pro), 4-8s duration
@@ -395,10 +396,11 @@ See [skills/gemini-tts/SKILL.md](skills/gemini-tts/SKILL.md) for full documentat
 **Prerequisites:**
 ```bash
 pip install google-genai
-export GEMINI_API_KEY="your-api-key"  # Get from https://aistudio.google.com/apikey
+export GOOGLE_CLOUD_PROJECT="your-project-id"  # Vertex AI only (Veo is not on the Gemini Developer API)
+gcloud auth application-default login
 ```
 
-**Generate a video (cost-effective Lite model by default):**
+**Generate a video (GA Fast model by default):**
 ```bash
 python3 <skill_dir>/scripts/generate.py "a cat surfing a wave, cinematic lighting" -o cat.mp4
 ```
@@ -421,7 +423,7 @@ See [skills/veo/SKILL.md](skills/veo/SKILL.md) for full documentation and option
 ```bash
 # Node.js >= 18 (Remotion bundles its own ffmpeg)
 node -v
-# Sibling media skills + API access (GEMINI_API_KEY or Vertex AI)
+# Sibling media skills + API access (GEMINI_API_KEY or Vertex AI; veo needs Vertex AI)
 export GEMINI_API_KEY="your-api-key"
 ```
 

@@ -1,4 +1,4 @@
-# Lyria 3 Prompt Reference
+# Lyria Prompt Reference (Lyria 3.5 / Lyria 3 Clip)
 
 ## Prompt Structure
 

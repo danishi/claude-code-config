@@ -49,7 +49,8 @@ python scripts/check_skills.py
 
 Also confirm tooling: **Node.js ≥ 18** (`node -v`) and `npx`. Remotion bundles
 its own ffmpeg, so ffmpeg is not required. API access for the media skills needs
-`GEMINI_API_KEY` (or Vertex AI). See `references/asset-pipeline.md`.
+`GEMINI_API_KEY` (or Vertex AI); **veo requires Vertex AI** (`GOOGLE_CLOUD_PROJECT`).
+See `references/asset-pipeline.md`.
 
 ### Step 1 — Gather requirements
 

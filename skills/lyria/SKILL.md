@@ -1,9 +1,9 @@
 ---
 name: lyria
 description: >
-  Generate music files using Google Gemini Lyria 3.
+  Generate music files using Google Gemini Lyria (Lyria 3.5 / Lyria 3 Clip).
   Automatically selects the best model based on the request / purpose:
-  Lyria 3 Pro for full-length, structured, lyric-bearing songs and
+  Lyria 3.5 for full-length, structured, lyric-bearing songs and
   Lyria 3 Clip for 30-second clips, loops, jingles, and quick previews.
   Supports genre / mood / instrument prompting, song-structure tags,
   custom lyrics, MP3 / WAV output, and works with both the Gemini
@@ -17,10 +17,10 @@ The model is **automatically selected** based on the request / purpose:
 
 | Model | ID | When used |
 |---|---|---|
-| **Lyria 3 Pro** | `lyria-3-pro-preview` | Full-length songs (≈ a couple of minutes), verses/choruses/bridges, lyrics, premium studio-quality output |
+| **Lyria 3.5** | `lyria-3.5` | Full-length songs (≈ a couple of minutes), verses/choruses/bridges, lyrics, premium studio-quality output |
 | **Lyria 3 Clip** | `lyria-3-clip-preview` | 30-second clips, loops, jingles, sound logos, quick previews / prompt iteration |
 
-**Lyria 3 Pro is auto-selected when any of these conditions are met (OR):**
+**Lyria 3.5 is auto-selected when any of these conditions are met (OR):**
 
 - `--pro` flag is specified
 - Prompt contains full-song keywords (e.g. `歌詞`, `フル尺`, `楽曲`, `full-length`, `verse`, `chorus`, `lyrics`, `professional`)
@@ -132,7 +132,7 @@ Arguments:
 Options:
   -o, --output PATH   Output file path (auto-generated if omitted; extension
                       derived from the returned audio MIME type)
-  --pro               Force Lyria 3 Pro model (full-length songs)
+  --pro               Force Lyria 3.5 model (full-length songs)
   --clip              Force Lyria 3 Clip model (30s clips, loops, jingles)
   --wav               Request WAV output (Pro only; Clip outputs MP3)
   -v, --verbose       Show detailed output
@@ -149,7 +149,7 @@ Options:
 | Model | Default format | Notes |
 |---|---|---|
 | Lyria 3 Clip | MP3, 48 kHz stereo | Always ~30-second clips |
-| Lyria 3 Pro | MP3 (or WAV with `--wav`), 48 kHz stereo | Full-length songs (≈ a couple of minutes) |
+| Lyria 3.5 | MP3 (or WAV with `--wav`), 44.1 kHz stereo | Full-length songs (≈ a couple of minutes) |
 
 The output file extension is derived from the audio MIME type returned by the API.
 

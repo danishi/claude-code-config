@@ -1,7 +1,7 @@
 {
   "name": "veo",
-  "version": "1.0.0",
-  "description": "Generate videos using Google Gemini Veo 3.1. Defaults to the cost-effective Veo 3.1 Lite model; the premium (Veo 3.1) and Fast models are opt-in via --pro/--fast. Supports text-to-video and image-to-video (first/last frame), 16:9 / 9:16, 720p/1080p (4k on Pro), 4-8s clips, and 1-4 videos per request. Works with Gemini Developer API and Vertex AI.",
+  "version": "2.0.0",
+  "description": "Generate videos using Google Veo 3.1 on Vertex AI. Defaults to the GA Veo 3.1 Fast model (veo-3.1-fast-generate-001); the premium Veo 3.1 and the cheaper Veo 3.1 Lite (Preview) models are opt-in via --pro/--lite. Supports text-to-video and image-to-video (first/last frame), 16:9 / 9:16, 720p/1080p (4k on Pro), 4-8s clips, and 1-4 videos per request. Requires Vertex AI.",
   "author": {
     "name": "danishi"
   },
@@ -13,6 +13,7 @@
     "create video",
     "veo",
     "veo 3.1",
+    "vertex ai",
     "gemini video",
     "AI video",
     "text to video",

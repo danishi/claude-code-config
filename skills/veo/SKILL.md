@@ -1,28 +1,34 @@
 ---
 name: veo
 description: >
-  Generate videos using Google Gemini Veo 3.1. Defaults to the cost-effective
-  Veo 3.1 Lite model; the premium (Veo 3.1) and Fast models are used only when
-  explicitly requested via --pro / --fast. Supports text-to-video and
-  image-to-video (first frame + optional last frame), 16:9 / 9:16, 720p / 1080p
-  (4k on Pro), 4-8s clips, and 1-4 videos per request. Works with both the
-  Gemini Developer API and Vertex AI.
+  Generate videos using Google Veo 3.1 on Vertex AI. Defaults to the GA
+  Veo 3.1 Fast model (veo-3.1-fast-generate-001); the premium Veo 3.1 and the
+  cheaper Veo 3.1 Lite (Preview) models are used only when explicitly requested
+  via --pro / --lite. Supports text-to-video and image-to-video (first frame +
+  optional last frame), 16:9 / 9:16, 720p / 1080p (4k on Pro), 4-8s clips, and
+  1-4 videos per request. Requires Vertex AI (GOOGLE_CLOUD_PROJECT); the Gemini
+  Developer API no longer serves Veo.
 ---
 
 # Veo - AI Video Generation Skill
 
-Use the Python script in `scripts/` to generate videos via Google Gemini Veo 3.1.
+Use the Python script in `scripts/` to generate videos via Google Veo 3.1 on Vertex AI.
 
-> **Default model is the cheapest one.** The more expensive models are used
-> **only when explicitly requested.**
+> **Default model is the GA Fast model.** Pro and Lite are used **only when
+> explicitly requested.**
 
-| Flag | Model | When used |
-|---|---|---|
-| _(default)_ | `veo-3.1-lite-generate-preview` | Cost-effective; used unless a flag says otherwise |
-| `--pro` | `veo-3.1-generate-preview` | Premium / cinematic, 4k, native audio — explicit only |
-| `--fast` | `veo-3.1-fast-generate-preview` | Faster generation — explicit only |
+| Flag | Model | Stage | When used |
+|---|---|---|---|
+| _(default)_ / `--fast` | `veo-3.1-fast-generate-001` | GA | Fast / balanced cost; used unless a flag says otherwise |
+| `--pro` | `veo-3.1-generate-001` | GA | Premium / cinematic, 4k — explicit only |
+| `--lite` | `veo-3.1-lite-generate-001` | Preview | Cheapest — explicit only |
 
-`--pro` and `--fast` are mutually exclusive. The `VEO_MODEL` env var overrides everything.
+`--pro`, `--fast` and `--lite` are mutually exclusive. The `VEO_MODEL` env var overrides everything.
+
+> **Gemini Developer API is no longer supported.** The
+> `veo-3.1-*-generate-preview` models were shut down on 2026-10-22, and the
+> Gemini Developer API (`GEMINI_API_KEY`) no longer serves any Veo model. If
+> only `GEMINI_API_KEY` is set, the script exits with migration guidance.
 
 ## Prerequisites
 
@@ -32,18 +38,7 @@ Use the Python script in `scripts/` to generate videos via Google Gemini Veo 3.1
 pip install google-genai
 ```
 
-### 2. Configure API credentials (one of the following)
-
-#### Option A: Gemini Developer API (recommended for personal use)
-
-Set the `GEMINI_API_KEY` environment variable.
-Get a key at https://aistudio.google.com/apikey
-
-```bash
-export GEMINI_API_KEY="your-api-key"
-```
-
-#### Option B: Vertex AI API (for Google Cloud users)
+### 2. Configure Vertex AI credentials
 
 Set `GOOGLE_CLOUD_PROJECT` and optionally `GOOGLE_CLOUD_LOCATION`.
 Requires a GCP project with the Vertex AI API enabled and
@@ -51,17 +46,14 @@ Application Default Credentials configured (`gcloud auth application-default log
 
 ```bash
 export GOOGLE_CLOUD_PROJECT="your-project-id"
-export GOOGLE_CLOUD_LOCATION="us-central1"   # optional, defaults to us-central1
+export GOOGLE_CLOUD_LOCATION="us-central1"   # optional; Veo 3.1 is served only in us-central1
 ```
-
-> **Priority:** If both `GOOGLE_CLOUD_PROJECT` and `GEMINI_API_KEY` are set,
-> Vertex AI is used.
 
 ### 3. Optional environment variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `VEO_MODEL` | `veo-3.1-lite-generate-preview` | Force a specific model (overrides flags) |
+| `VEO_MODEL` | `veo-3.1-fast-generate-001` | Force a specific model (overrides flags) |
 | `VIDEO_OUTPUT_DIR` | `./veo-videos` | Default output directory |
 | `VEO_NO_SSL_VERIFY` | _(unset)_ | Set to `1` / `true` / `yes` to disable SSL certificate verification |
 
@@ -74,7 +66,7 @@ export GOOGLE_CLOUD_LOCATION="us-central1"   # optional, defaults to us-central1
 Video generation is a long-running operation; the script submits the request
 and polls until the video is ready, then downloads and saves the `.mp4`.
 
-#### Text-to-video (default Lite model)
+#### Text-to-video (default Fast model)
 
 ```bash
 python scripts/generate.py "a cat surfing a wave, cinematic lighting" -o cat.mp4
@@ -104,6 +96,12 @@ python scripts/generate.py "morph from sunrise to sunset" -i sunrise.jpg --last-
 python scripts/generate.py "epic drone shot over mountains" --pro --resolution 1080p -o drone.mp4
 ```
 
+#### Cheapest model (explicit opt-in)
+
+```bash
+python scripts/generate.py "abstract liquid motion" --lite -o liquid.mp4
+```
+
 #### Multiple variations
 
 ```bash
@@ -130,7 +128,8 @@ usage: generate.py [-h] [-o OUTPUT] [-i IMAGE] [--last-frame PATH]
                    [-r {16:9,9:16}] [--resolution {720p,1080p,4k}]
                    [-d DURATION] [-n COUNT]
                    [--person-generation {auto,dont_allow,allow_adult,allow_all}]
-                   [--negative-prompt TEXT] [--seed SEED] [--pro] [--fast]
+                   [--negative-prompt TEXT] [--seed SEED]
+                   [--pro | --fast | --lite]
                    [--poll-interval SECS] [--timeout SECS] [-v] [--json]
                    [--no-ssl-verify] prompt
 
@@ -146,12 +145,12 @@ Options:
   -d, --duration SECS     Clip duration in seconds (default: 8)
   -n, --count N           Number of videos, 1-4 (default: 1)
   --person-generation P   auto / dont_allow / allow_adult / allow_all
-                          (default: auto = allow_all on Gemini Developer API,
-                          allow_adult on Vertex AI)
+                          (default: auto = allow_adult)
   --negative-prompt TEXT  Things to avoid in the video
   --seed SEED             Seed for improved consistency
   --pro                   Use the premium Veo 3.1 model (explicit)
-  --fast                  Use the Veo 3.1 Fast model (explicit)
+  --fast                  Use the Veo 3.1 Fast model (default)
+  --lite                  Use the Veo 3.1 Lite model (Preview, explicit)
   --poll-interval SECS    Seconds between status checks (default: 10)
   --timeout SECS          Max seconds to wait (default: no limit)
   -v, --verbose           Show detailed output
@@ -163,33 +162,29 @@ Options:
 
 ## Capabilities & Limits
 
-| Capability | Lite (default) | Pro (`--pro`) / Fast (`--fast`) |
-|---|---|---|
-| Text-to-video | ✅ | ✅ |
-| Image-to-video (first / last frame) | ✅ | ✅ |
-| Aspect ratios | 16:9, 9:16 | 16:9, 9:16 |
-| Resolution | 720p, 1080p (8s) | + 4k |
-| Duration | 4 / 6 / 8 s | 4 / 6 / 8 s |
-| Reference images, video extension | ❌ | ✅ (Pro / Fast) |
+| Capability | Fast (default) | Pro (`--pro`) | Lite (`--lite`) |
+|---|---|---|---|
+| Launch stage | GA | GA | Preview |
+| Text-to-video | ✅ | ✅ | ✅ |
+| Image-to-video (first / last frame) | ✅ | ✅ | ✅ |
+| Aspect ratios | 16:9, 9:16 | 16:9, 9:16 | 16:9, 9:16 |
+| Resolution | 720p, 1080p | 720p, 1080p, 4k | 720p, 1080p |
+| Duration | 4 / 6 / 8 s | 4 / 6 / 8 s | 4 / 6 / 8 s |
+| Reference images | ✅ | ✅ | ❌ |
+| Video extension | ✅ | ✅ | ✅ |
+| Native audio | ✅ | ✅ | ✅ |
 
 Notes:
 - **1080p** typically requires an **8-second** duration.
-- **4k** is **not** available on Lite — use `--pro`.
+- **4k** is available **only on Pro** — use `--pro`.
+- Veo 3.1 is served only in the **`us-central1`** region.
+- Reference images and video extension are not exposed by `scripts/generate.py`.
 
 ### Person generation policy
 
-The `--person-generation` policy controls whether people appear in the output:
-
-| Platform | Supported values | Default (`auto`) |
-|---|---|---|
-| **Gemini Developer API** (`GEMINI_API_KEY`) | **`allow_all` only** — `dont_allow` / `allow_adult` are currently **rejected** | `allow_all` |
-| **Vertex AI** (`GOOGLE_CLOUD_PROJECT`) | `dont_allow`, `allow_adult`, `allow_all` | `allow_adult` |
-
-- The default is **`auto`**, which picks a platform-safe value automatically.
-- As a safety net, if the API rejects the chosen value with a
-  `personGeneration ... not supported` error, the script **automatically
-  retries once with `allow_all`** — so a single run succeeds without manual
-  intervention.
+The `--person-generation` policy controls whether people appear in the output.
+Vertex AI accepts `dont_allow`, `allow_adult` and `allow_all`; the default
+`auto` resolves to `allow_adult`.
 
 ---
 
@@ -215,10 +210,11 @@ See `references/prompts.md` for category-specific templates.
 | Error | Solution |
 |---|---|
 | `google-genai package not installed` | Run `pip install google-genai` |
-| `No API credentials found` | Set `GEMINI_API_KEY` or `GOOGLE_CLOUD_PROJECT` |
-| `Veo 3.1 Lite does not support 4k` | Use `--pro` for 4k, or pick 720p/1080p |
+| `No API credentials found` | Set `GOOGLE_CLOUD_PROJECT` and run `gcloud auth application-default login` |
+| `Veo is no longer available on the Gemini Developer API` | Only `GEMINI_API_KEY` is set. Switch to Vertex AI (`GOOGLE_CLOUD_PROJECT`) |
+| `only the premium Veo 3.1 model supports 4k` | Use `--pro` for 4k, or pick 720p/1080p |
+| `404` / model not found | Check `GOOGLE_CLOUD_LOCATION` is `us-central1` and the model ID in `VEO_MODEL` |
 | `No videos were generated` | Rephrase the prompt; it may have been blocked |
-| `personGeneration is currently not supported` | The Gemini Developer API only supports `allow_all`. The script auto-retries with `allow_all`; or pass `--person-generation allow_all` explicitly |
 | `Content blocked by safety filters` | Rephrase; check `--person-generation` policy |
 | `Timed out ... waiting` | Increase `--timeout` or omit it (no limit) |
 | `API rate limit reached` | Wait and retry |
