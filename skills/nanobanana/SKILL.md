@@ -1,7 +1,7 @@
 ---
 name: nanobanana
 description: >
-  Generate and edit images using Google Gemini (Nano Banana Pro / Nano Banana 2).
+  Generate and edit images using Google Gemini (Nano Banana Pro / Nano Banana 2.1).
   Automatically selects the best model based on prompt complexity.
   Supports text-to-image generation, image editing with reference images,
   configurable aspect ratios, 1K/2K/4K output, Google Search grounding,
@@ -15,8 +15,8 @@ The model is **automatically selected** based on prompt complexity:
 
 | Model | ID | When used |
 |---|---|---|
-| **Nano Banana Pro** | `gemini-3-pro-image-preview` | Complex or high-quality requests |
-| **Nano Banana 2** | `gemini-3.1-flash-image-preview` | Simple, lightweight requests |
+| **Nano Banana Pro** | `gemini-3-pro-image` | Complex or high-quality requests |
+| **Nano Banana 2.1** | `gemini-nano-banana-2.1` | Simple, lightweight requests |
 
 **Nano Banana Pro is auto-selected when any of these conditions are met (OR):**
 

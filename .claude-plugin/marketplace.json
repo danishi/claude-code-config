@@ -26,13 +26,13 @@
     },
     {
       "name": "nanobanana",
-      "description": "Generate and edit images using Google Gemini (Nano Banana Pro / Nano Banana 2). Auto-selects model by complexity. Supports text-to-image, image editing, aspect ratios, 1K/2K/4K output, and batch generation.",
+      "description": "Generate and edit images using Google Gemini (Nano Banana Pro / Nano Banana 2.1). Auto-selects model by complexity. Supports text-to-image, image editing, aspect ratios, 1K/2K/4K output, and batch generation.",
       "source": "./skills/nanobanana",
       "category": "ai-tools"
     },
     {
       "name": "lyria",
-      "description": "Generate music files using Google Gemini Lyria 3. Auto-selects the model by request/purpose: Lyria 3 Pro for full-length structured songs with lyrics, Lyria 3 Clip for 30s clips, loops, and jingles. Supports genre/mood/instrument prompting, song-structure tags, and MP3/WAV output.",
+      "description": "Generate music files using Google Gemini Lyria. Auto-selects the model by request/purpose: Lyria 3.5 for full-length structured songs with lyrics, Lyria 3 Clip for 30s clips, loops, and jingles. Supports genre/mood/instrument prompting, song-structure tags, and MP3/WAV output.",
       "source": "./skills/lyria",
       "category": "ai-tools"
     },
@@ -44,7 +44,7 @@
     },
     {
       "name": "veo",
-      "description": "Generate videos using Google Gemini Veo 3.1. Defaults to the cost-effective Veo 3.1 Lite model; the premium (Veo 3.1) and Fast models are opt-in via --pro/--fast. Supports text-to-video and image-to-video (first/last frame), 16:9 / 9:16, 720p/1080p (4k on Pro), 4-8s clips, and 1-4 videos per request.",
+      "description": "Generate videos using Google Veo 3.1 on Vertex AI. Defaults to the GA Veo 3.1 Fast model (veo-3.1-fast-generate-001); the premium Veo 3.1 and the cheaper Veo 3.1 Lite (Preview) models are opt-in via --pro/--lite. Supports text-to-video and image-to-video (first/last frame), 16:9 / 9:16, 720p/1080p (4k on Pro), 4-8s clips, and 1-4 videos per request. Requires Vertex AI.",
       "source": "./skills/veo",
       "category": "ai-tools"
     },

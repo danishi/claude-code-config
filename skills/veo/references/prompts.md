@@ -10,8 +10,8 @@ A good video prompt describes **motion and cinematography**, not just a still sc
 4. **Style** — aesthetic (`cinematic`, `anime`, `documentary`, `35mm film`, `claymation`)
 5. **Pace** — temporal feel (`slow motion`, `real time`, `time-lapse`)
 
-> Default generation uses the cost-effective **Lite** model. Add `--pro` only
-> when you explicitly need premium quality / 4k, or `--fast` for speed.
+> Default generation uses the GA **Fast** model. Add `--pro` only when you
+> explicitly need premium quality / 4k, or `--lite` for the cheapest output.
 
 ---
 

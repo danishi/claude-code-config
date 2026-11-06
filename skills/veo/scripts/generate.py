@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """
-Veo - AI Video Generation using Google Gemini (Veo 3.1).
+Veo - AI Video Generation using Google Veo 3.1 on Vertex AI.
 
-By default this uses the **cost-effective Veo 3.1 Lite** model
-(`veo-3.1-lite-generate-preview`).  The more expensive models are used
-**only when explicitly requested**:
+By default this uses the **GA Veo 3.1 Fast** model
+(`veo-3.1-fast-generate-001`).  Other models are used **only when explicitly
+requested**:
 
-  - --pro   -> veo-3.1-generate-preview       (premium / cinematic)
-  - --fast  -> veo-3.1-fast-generate-preview  (faster)
-  - default -> veo-3.1-lite-generate-preview  (cheapest)
+  - default -> veo-3.1-fast-generate-001  (GA, fast / balanced cost)
+  - --pro   -> veo-3.1-generate-001       (GA, premium / cinematic, 4k)
+  - --lite  -> veo-3.1-lite-generate-001  (Preview, cheapest)
 
-Supports text-to-video and image-to-video (first frame + optional last frame),
-and both the Gemini Developer API and Vertex AI API platforms.
+Supports text-to-video and image-to-video (first frame + optional last frame).
+
+Vertex AI only: the Veo 3.1 preview models on the Gemini Developer API
+(`veo-3.1-*-generate-preview`) were shut down on 2026-10-22, and the Gemini
+Developer API no longer serves any Veo model.
 
 Usage:
     python generate.py "a cat surfing a wave, cinematic" -o cat.mp4
@@ -20,14 +23,12 @@ Usage:
     python generate.py "epic drone shot, 1080p" --pro --resolution 1080p
 
 Environment Variables:
-    Gemini Developer API:
-        GEMINI_API_KEY - API key from https://aistudio.google.com/apikey
-
-    Vertex AI API:
+    Vertex AI API (required):
         GOOGLE_CLOUD_PROJECT  - GCP project ID
-        GOOGLE_CLOUD_LOCATION - GCP region (default: us-central1)
+        GOOGLE_CLOUD_LOCATION - GCP region (default: us-central1; Veo 3.1 is
+                                served only in us-central1)
 
-    Common:
+    Optional:
         VEO_MODEL         - Force a specific model (overrides flags)
         VIDEO_OUTPUT_DIR  - Default output directory (default: ./veo-videos)
 """
@@ -50,14 +51,14 @@ except ImportError:
     print("Install with: pip install google-genai", file=sys.stderr)
     sys.exit(1)
 
-# Default is the cheapest model. Pro / Fast are opt-in only.
-MODEL_LITE = "veo-3.1-lite-generate-preview"
-MODEL_PRO = "veo-3.1-generate-preview"
-MODEL_FAST = "veo-3.1-fast-generate-preview"
+# Default is the GA Fast model. Pro / Lite are opt-in only.
+MODEL_FAST = "veo-3.1-fast-generate-001"
+MODEL_PRO = "veo-3.1-generate-001"
+MODEL_LITE = "veo-3.1-lite-generate-001"
 
 VALID_ASPECT_RATIOS = ["16:9", "9:16"]
 VALID_RESOLUTIONS = ["720p", "1080p", "4k"]
-# "auto" resolves per platform (see resolve_person_generation).
+# "auto" resolves to "allow_adult" (see resolve_person_generation).
 VALID_PERSON_GENERATION = ["auto", "dont_allow", "allow_adult", "allow_all"]
 
 _ssl_verification_disabled = False
@@ -116,11 +117,10 @@ def disable_ssl_verification() -> None:
 
 
 def create_client(no_ssl_verify: bool = False) -> genai.Client:
-    """Create a GenAI client based on available environment variables.
+    """Create a Vertex AI GenAI client from environment variables.
 
-    Priority:
-        1. Vertex AI (if GOOGLE_CLOUD_PROJECT is set)
-        2. Gemini Developer API (if GEMINI_API_KEY is set)
+    Veo is no longer served by the Gemini Developer API, so GEMINI_API_KEY
+    alone is rejected with migration guidance.
 
     Args:
         no_ssl_verify: If True, disable SSL certificate verification.
@@ -134,7 +134,6 @@ def create_client(no_ssl_verify: bool = False) -> genai.Client:
 
     project = os.environ.get("GOOGLE_CLOUD_PROJECT")
     location = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
-    api_key = os.environ.get("GEMINI_API_KEY")
 
     if project:
         return genai.Client(
@@ -143,57 +142,48 @@ def create_client(no_ssl_verify: bool = False) -> genai.Client:
             location=location,
         )
 
-    if api_key:
-        # Veo endpoints are served under the v1beta API version.
-        return genai.Client(
-            api_key=api_key,
-            http_options={"api_version": "v1beta"},
+    if os.environ.get("GEMINI_API_KEY"):
+        print(
+            "Error: Veo is no longer available on the Gemini Developer API.\n"
+            "The veo-3.1-*-generate-preview models were shut down on 2026-10-22.\n"
+            "Use Vertex AI instead:\n"
+            "  export GOOGLE_CLOUD_PROJECT=\"your-project-id\"\n"
+            "  gcloud auth application-default login\n",
+            file=sys.stderr,
         )
+        sys.exit(1)
 
     print(
         "Error: No API credentials found.\n"
-        "Set one of:\n"
-        "  GEMINI_API_KEY           - for Gemini Developer API\n"
-        "  GOOGLE_CLOUD_PROJECT     - for Vertex AI API\n",
+        "Set GOOGLE_CLOUD_PROJECT (Vertex AI) and configure Application Default\n"
+        "Credentials (gcloud auth application-default login).\n",
         file=sys.stderr,
     )
     sys.exit(1)
 
 
-def select_model(force_pro: bool = False, force_fast: bool = False) -> str:
+def select_model(force_pro: bool = False, force_lite: bool = False) -> str:
     """Select the Veo model.
 
-    Defaults to the cheapest Lite model.  The premium (Pro) and Fast models
-    are used only when explicitly requested via flags, or via the VEO_MODEL
-    environment variable.
+    Defaults to the GA Fast model.  The premium (Pro) and cheapest (Lite)
+    models are used only when explicitly requested via flags, or via the
+    VEO_MODEL environment variable.
     """
     override = os.environ.get("VEO_MODEL")
     if override:
         return override
     if force_pro:
         return MODEL_PRO
-    if force_fast:
-        return MODEL_FAST
-    return MODEL_LITE
-
-
-def _is_vertex() -> bool:
-    """Return True if the Vertex AI platform will be used (GOOGLE_CLOUD_PROJECT set)."""
-    return bool(os.environ.get("GOOGLE_CLOUD_PROJECT"))
+    if force_lite:
+        return MODEL_LITE
+    return MODEL_FAST
 
 
 def resolve_person_generation(value: str | None) -> str:
-    """Resolve the person_generation policy, picking a platform-safe default.
-
-    The Gemini Developer API currently only supports ``allow_all`` for Veo;
-    ``dont_allow`` / ``allow_adult`` are rejected.  Vertex AI supports the full
-    range.  When ``value`` is None or "auto", choose:
-        - Vertex AI            -> "allow_adult"
-        - Gemini Developer API -> "allow_all"
-    """
+    """Resolve the person_generation policy ("auto" -> "allow_adult")."""
     if value and value != "auto":
         return value
-    return "allow_adult" if _is_vertex() else "allow_all"
+    return "allow_adult"
 
 
 def load_image(path: str) -> "types.Image":
@@ -243,7 +233,7 @@ def generate_video(
     negative_prompt: str | None = None,
     seed: int | None = None,
     force_pro: bool = False,
-    force_fast: bool = False,
+    force_lite: bool = False,
     poll_interval: float = 10.0,
     timeout: float | None = None,
     verbose: bool = False,
@@ -261,12 +251,11 @@ def generate_video(
         duration_seconds:  Clip length in seconds.
         number_of_videos:  Number of videos (1-4).
         person_generation: "auto" / "dont_allow" / "allow_adult" / "allow_all".
-                           "auto" picks allow_all on the Gemini Developer API
-                           and allow_adult on Vertex AI.
+                           "auto" resolves to allow_adult.
         negative_prompt:   Optional things to avoid.
         seed:              Optional seed for consistency.
         force_pro:         Use the premium Veo 3.1 model (explicit).
-        force_fast:        Use the Veo 3.1 Fast model (explicit).
+        force_lite:        Use the Veo 3.1 Lite model (explicit).
         poll_interval:     Seconds between polling the operation.
         timeout:           Max seconds to wait (None = no limit).
         verbose:           Print progress information.
@@ -277,7 +266,7 @@ def generate_video(
         metadata (dict|None).
     """
     client = create_client(no_ssl_verify=no_ssl_verify)
-    model = select_model(force_pro=force_pro, force_fast=force_fast)
+    model = select_model(force_pro=force_pro, force_lite=force_lite)
 
     if aspect_ratio not in VALID_ASPECT_RATIOS:
         print(
@@ -291,18 +280,15 @@ def generate_video(
             f"Valid: {VALID_RESOLUTIONS}",
             file=sys.stderr,
         )
-    if resolution == "4k" and model == MODEL_LITE:
+    if resolution == "4k" and model in (MODEL_FAST, MODEL_LITE):
         print(
-            "Warning: Veo 3.1 Lite does not support 4k output. "
+            "Warning: only the premium Veo 3.1 model supports 4k output. "
             "Use --pro for 4k, or choose 720p/1080p.",
             file=sys.stderr,
         )
 
-    # Resolve a platform-safe person_generation policy. The Gemini Developer
-    # API currently only accepts allow_all for Veo.
     person_generation = resolve_person_generation(person_generation)
 
-    # Build config (person_generation may be swapped on retry; see below).
     base_config_kwargs: dict = {
         "aspect_ratio": aspect_ratio,
         "resolution": resolution,
@@ -332,44 +318,18 @@ def generate_video(
             print(f"Last frame: {last_frame_path}")
         print("Submitting generation request...")
 
-    def _submit(person_gen: str):
-        """Submit the generation request with the given person_generation policy."""
-        video_config = types.GenerateVideosConfig(
-            person_generation=person_gen, **base_config_kwargs
-        )
-        gen_kwargs: dict = {
-            "model": model,
-            "prompt": prompt,
-            "config": video_config,
-        }
-        if start_image is not None:
-            gen_kwargs["image"] = start_image
-        return client.models.generate_videos(**gen_kwargs)
-
-    def _is_person_generation_unsupported(err: Exception) -> bool:
-        """Detect the 'personGeneration is currently not supported' error."""
-        msg = str(err).lower()
-        return "persongeneration" in msg and (
-            "not supported" in msg or "not currently supported" in msg
-        )
+    gen_kwargs: dict = {
+        "model": model,
+        "prompt": prompt,
+        "config": types.GenerateVideosConfig(
+            person_generation=person_generation, **base_config_kwargs
+        ),
+    }
+    if start_image is not None:
+        gen_kwargs["image"] = start_image
 
     try:
-        try:
-            operation = _submit(person_generation)
-        except Exception as e:
-            # The Gemini Developer API rejects dont_allow / allow_adult for Veo;
-            # transparently retry once with allow_all so the user succeeds in
-            # a single run.
-            if person_generation != "allow_all" and _is_person_generation_unsupported(e):
-                if verbose:
-                    print(
-                        f"  person_generation='{person_generation}' not supported "
-                        "on this API; retrying with 'allow_all'..."
-                    )
-                person_generation = "allow_all"
-                operation = _submit(person_generation)
-            else:
-                raise
+        operation = client.models.generate_videos(**gen_kwargs)
 
         # Poll the long-running operation until completion.
         waited = 0.0
@@ -455,7 +415,7 @@ def generate_video(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate videos using Veo 3.1 (defaults to the cheap Lite model)",
+        description="Generate videos using Veo 3.1 on Vertex AI (defaults to the GA Fast model)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
@@ -464,10 +424,10 @@ Examples:
   %(prog)s "animate this photo into a gentle breeze" -i start.jpg -o anim.mp4
   %(prog)s "epic drone shot over mountains" --pro --resolution 1080p
 
-Models (default is the cheapest; Pro/Fast are opt-in only):
-  default  veo-3.1-lite-generate-preview   (cost-effective)
-  --pro    veo-3.1-generate-preview        (premium / cinematic, 4k)
-  --fast   veo-3.1-fast-generate-preview   (faster)
+Models (default is GA Fast; Pro/Lite are opt-in only):
+  default  veo-3.1-fast-generate-001   (GA, fast / balanced cost)
+  --pro    veo-3.1-generate-001        (GA, premium / cinematic, 4k)
+  --lite   veo-3.1-lite-generate-001   (Preview, cheapest)
 """,
     )
 
@@ -498,18 +458,22 @@ Models (default is the cheapest; Pro/Fast are opt-in only):
     parser.add_argument(
         "--person-generation", dest="person_generation",
         default="auto", choices=VALID_PERSON_GENERATION,
-        help="Person generation policy (default: auto = allow_all on Gemini "
-             "Developer API, allow_adult on Vertex AI)",
+        help="Person generation policy (default: auto = allow_adult)",
     )
     parser.add_argument("--negative-prompt", dest="negative_prompt", help="Things to avoid")
     parser.add_argument("--seed", type=int, help="Seed for consistency")
-    parser.add_argument(
+    model_group = parser.add_mutually_exclusive_group()
+    model_group.add_argument(
         "--pro", action="store_true",
-        help="Use the premium Veo 3.1 model (veo-3.1-generate-preview)",
+        help=f"Use the premium Veo 3.1 model ({MODEL_PRO})",
     )
-    parser.add_argument(
+    model_group.add_argument(
         "--fast", action="store_true",
-        help="Use the Veo 3.1 Fast model (veo-3.1-fast-generate-preview)",
+        help=f"Use the Veo 3.1 Fast model ({MODEL_FAST}; this is the default)",
+    )
+    model_group.add_argument(
+        "--lite", action="store_true",
+        help=f"Use the Veo 3.1 Lite model ({MODEL_LITE}; Preview)",
     )
     parser.add_argument(
         "--poll-interval", type=float, default=10.0,
@@ -530,9 +494,6 @@ Models (default is the cheapest; Pro/Fast are opt-in only):
 
     args = parser.parse_args()
 
-    if args.pro and args.fast:
-        print("Error: --pro and --fast are mutually exclusive.", file=sys.stderr)
-        sys.exit(2)
     if not (1 <= args.count <= 4):
         print("Error: --count must be between 1 and 4.", file=sys.stderr)
         sys.exit(2)
@@ -550,7 +511,7 @@ Models (default is the cheapest; Pro/Fast are opt-in only):
         negative_prompt=args.negative_prompt,
         seed=args.seed,
         force_pro=args.pro,
-        force_fast=args.fast,
+        force_lite=args.lite,
         poll_interval=args.poll_interval,
         timeout=args.timeout,
         verbose=args.verbose or (args.output is None and not args.json_output),

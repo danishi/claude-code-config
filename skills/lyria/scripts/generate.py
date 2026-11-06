@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Lyria - AI Music Generation using Google Gemini (Lyria 3).
+Lyria - AI Music Generation using Google Gemini (Lyria 3.5 / Lyria 3 Clip).
 
 Automatically selects the best model based on the request / purpose:
-  - Lyria 3 Pro   (lyria-3-pro-preview)  : full-length songs, lyrics,
-                                            song structure, premium quality
+  - Lyria 3.5     (lyria-3.5)            : full-length songs, lyrics,
+                                           song structure, premium quality
   - Lyria 3 Clip  (lyria-3-clip-preview) : 30-second clips, loops, jingles,
-                                            quick previews / prompt iteration
+                                           quick previews / prompt iteration
 
 Supports both Gemini Developer API and Vertex AI API platforms.
 
@@ -46,10 +46,10 @@ except ImportError:
     print("Install with: pip install google-genai", file=sys.stderr)
     sys.exit(1)
 
-MODEL_PRO = "lyria-3-pro-preview"
+MODEL_PRO = "lyria-3.5"
 MODEL_CLIP = "lyria-3-clip-preview"
 
-# Thresholds for auto-selecting Lyria 3 Pro (full song vs short clip)
+# Thresholds for auto-selecting Lyria 3.5 (full song vs short clip)
 _COMPLEXITY_PROMPT_LENGTH = 100
 
 # Keywords in the prompt that indicate a full-length / premium song -> Pro
@@ -171,7 +171,7 @@ def select_model(
 ) -> str:
     """Select the best Lyria model based on the request / purpose.
 
-    Returns Lyria 3 Pro for full-length / structured / premium songs and
+    Returns Lyria 3.5 for full-length / structured / premium songs and
     Lyria 3 Clip for short clips, loops, jingles, and quick previews.
     The LYRIA_MODEL env var overrides auto-selection.
 
@@ -225,13 +225,13 @@ def generate_music(
     verbose: bool = False,
     no_ssl_verify: bool = False,
 ) -> dict:
-    """Generate music using the Lyria 3 API.
+    """Generate music using the Lyria API.
 
     Args:
         prompt:         Text description of the music (genre, mood, instruments,
                         structure tags, lyrics, etc.).
         output_path:    Where to save the generated audio.
-        force_pro:      Force Lyria 3 Pro model.
+        force_pro:      Force Lyria 3.5 model.
         force_clip:     Force Lyria 3 Clip model.
         wav:            Request WAV output (Pro only; Clip is MP3).
         verbose:        Print progress information.
@@ -348,7 +348,7 @@ def generate_music(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Generate music using Lyria 3 (auto-selects Pro or Clip based on the request)",
+        description="Generate music using Lyria 3.5 / Lyria 3 Clip (auto-selects Pro or Clip based on the request)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:
@@ -363,7 +363,7 @@ Examples:
     parser.add_argument("-o", "--output", help="Output file path")
     parser.add_argument(
         "--pro", action="store_true",
-        help="Force Lyria 3 Pro (full-length songs)",
+        help="Force Lyria 3.5 (full-length songs)",
     )
     parser.add_argument(
         "--clip", action="store_true",

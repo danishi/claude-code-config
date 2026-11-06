@@ -11,7 +11,8 @@ skills in this repository and places their output under the Remotion project's
 | Background music (BGM) | **lyria** | `scripts/generate.py` | `public/audio/` |
 | Narration / voiceover | **gemini-tts** | `scripts/generate.py` | `public/audio/` |
 
-> All sibling skills share the same env (`GEMINI_API_KEY` or Vertex AI), output
+> All sibling skills share the same env (`GEMINI_API_KEY` or Vertex AI; **veo
+> requires Vertex AI** — `GOOGLE_CLOUD_PROJECT`), output
 > MP4/PNG/WAV/MP3, and support `--no-ssl-verify`.
 
 ## 0. Check availability first
@@ -44,7 +45,8 @@ python <veo>/scripts/generate.py \
   -o <project>/public/video/scene2.mp4
 ```
 
-- Defaults to the cost-effective Veo 3.1 Lite model (add `--pro` only if asked).
+- Defaults to the GA Veo 3.1 Fast model (add `--pro` / `--lite` only if asked).
+- Requires Vertex AI (`GOOGLE_CLOUD_PROJECT`); `GEMINI_API_KEY` alone cannot run veo.
 - Veo clips are 4-8s; size each scene's `durationInFrames` to the clip length
   (`seconds * fps`).
 
