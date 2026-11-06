@@ -49,8 +49,14 @@
       "category": "ai-tools"
     },
     {
+      "name": "gemini-omni",
+      "description": "Generate, edit, and extend videos with audio using Google Gemini Omni Flash (gemini-omni-1.1-flash) via the Interactions API. Text-to-video, image-to-video, first/last frame interpolation, subject reference, uploaded-video editing, extension, and multi-turn conversational editing. 16:9 / 9:16, 360p-4k. Works with Gemini Developer API and Vertex AI.",
+      "source": "./skills/gemini-omni",
+      "category": "ai-tools"
+    },
+    {
       "name": "video-composer",
-      "description": "Produce rich, finished video content with React Remotion by orchestrating the repository's media skills (nanobanana images, veo video, lyria BGM, gemini-tts narration) on a data-driven timeline. Approval-gated: returns a composition plan for approval, generates assets, composes, runs a multimodal self-review loop, and delivers only when the result meets the bar.",
+      "description": "Produce rich, finished video content with React Remotion by orchestrating the repository's media skills (nanobanana images, gemini-omni video with veo as fallback, lyria BGM, gemini-tts narration) on a data-driven timeline. Approval-gated: returns a composition plan for approval, generates assets, composes, runs a multimodal self-review loop, and delivers only when the result meets the bar.",
       "source": "./skills/video-composer",
       "category": "ai-tools"
     },

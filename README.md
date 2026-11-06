@@ -23,7 +23,8 @@ Personal repository for managing Claude Code settings, plugins, and development 
     ├── nanobanana/            # AI image generation skill (Gemini)
     ├── lyria/                 # AI music generation skill
     ├── gemini-tts/            # AI text-to-speech (read-aloud) skill
-    ├── veo/                   # AI video generation skill
+    ├── gemini-omni/           # AI video generation & editing skill (Gemini Omni)
+    ├── veo/                   # AI video generation skill (Vertex AI)
     ├── video-composer/        # Remotion video orchestration skill
     ├── izakaya-search/        # Japanese restaurant search skill
     └── skill-packager/        # Skill packaging utility
@@ -31,7 +32,7 @@ Personal repository for managing Claude Code settings, plugins, and development 
 
 ## Plugins & Skills
 
-This repository provides ten plugins via the Claude Code marketplace:
+This repository provides eleven plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -100,6 +101,18 @@ AI text-to-speech (read-aloud) using Google Gemini 3.8 TTS:
 - **WAV Output** - 16-bit, 24 kHz mono WAV (PCM auto-wrapped)
 - **Voice Reference** - Built-in voice list and style / audio-tag guide
 
+### gemini-omni Skill
+
+AI video generation and editing with audio using Google Gemini Omni Flash (`gemini-omni-1.1-flash`) via the Interactions API:
+
+- **One Model, Many Modes** - Text-to-video, image-to-video, first/last frame interpolation, and subject reference (up to 10 images), inferred from the inputs
+- **Edit & Extend** - Edit an uploaded clip ("make it anime") or extend it (+~10s per turn, up to 40s)
+- **Multi-turn Editing** - Keep refining a generated video with `--previous` ("Keep everything else the same.")
+- **Native Audio & Text** - Speech, music, and sound effects in the clip; legible on-screen text
+- **Both Platforms** - Gemini Developer API (`GEMINI_API_KEY`) or Vertex AI (`GOOGLE_CLOUD_PROJECT`)
+- **Output Control** - 16:9 / 9:16, 360p-4k (1080p / 4k via URI delivery)
+- **Prompt Reference** - Built-in prompt guide (single shot, audio, timing, text, editing, extension)
+
 ### veo Skill
 
 AI video generation using Google Veo 3.1 on Vertex AI:
@@ -117,7 +130,7 @@ AI video generation using Google Veo 3.1 on Vertex AI:
 
 Orchestrated rich video production with React Remotion, combining the other media skills:
 
-- **Skill Orchestration** - Drives nanobanana (images), veo (clips), lyria (BGM), and gemini-tts (narration) on one timeline
+- **Skill Orchestration** - Drives nanobanana (images), gemini-omni (clips; veo as fallback), lyria (BGM), and gemini-tts (narration) on one timeline
 - **Approval Gate** - Returns a scene-by-scene composition plan and waits for approval before generating anything
 - **Data-driven Remotion** - Scaffolds a fresh TypeScript Remotion project whose timeline is described entirely by `props.json` (scenes, Ken Burns, captions, transitions, voiceover, BGM)
 - **Multimodal Self-Review** - Renders, extracts still frames, visually inspects them against a rubric, and iterates autonomously until the quality bar is met
@@ -194,6 +207,7 @@ claude plugin install codex-imagegen
 claude plugin install nanobanana
 claude plugin install lyria
 claude plugin install gemini-tts
+claude plugin install gemini-omni
 claude plugin install veo
 claude plugin install video-composer
 claude plugin install izakaya-search
@@ -209,6 +223,7 @@ npx skills add danishi/claude-code-config --skill codex-imagegen
 npx skills add danishi/claude-code-config --skill nanobanana
 npx skills add danishi/claude-code-config --skill lyria
 npx skills add danishi/claude-code-config --skill gemini-tts
+npx skills add danishi/claude-code-config --skill gemini-omni
 npx skills add danishi/claude-code-config --skill veo
 npx skills add danishi/claude-code-config --skill video-composer
 npx skills add danishi/claude-code-config --skill izakaya-search
@@ -374,6 +389,33 @@ python3 <skill_dir>/scripts/generate.py -f dialogue.txt --speaker "Taro:Kore" --
 
 See [skills/gemini-tts/SKILL.md](skills/gemini-tts/SKILL.md) for full documentation and options.
 
+### gemini-omni Skill
+
+**Prerequisites:**
+```bash
+pip install -U google-genai  # needs client.interactions (2.x)
+export GEMINI_API_KEY="your-api-key"  # or GOOGLE_CLOUD_PROJECT for Vertex AI
+```
+
+**Generate a video with sound:**
+```bash
+python3 <skill_dir>/scripts/generate.py "Continuous single shot of a cat on a sunny windowsill. Sound: birds. No dialogue." -o cat.mp4
+```
+
+**Edit it conversationally, then extend it:**
+```bash
+python3 <skill_dir>/scripts/generate.py "Make it claymation. Keep everything else the same." --previous cat.mp4 -o cat_clay.mp4
+python3 <skill_dir>/scripts/generate.py "Extend this video: the cat jumps down" --previous cat_clay.mp4 -o cat_long.mp4
+```
+
+**Animate an image / edit your own clip:**
+```bash
+python3 <skill_dir>/scripts/generate.py "Bring this photo to life, slow orbit" -i product.png -o product.mp4
+python3 <skill_dir>/scripts/generate.py "Make this video anime" --video clip.mp4 -o clip_anime.mp4
+```
+
+See [skills/gemini-omni/SKILL.md](skills/gemini-omni/SKILL.md) for full documentation and options.
+
 ### veo Skill
 
 **Prerequisites:**
@@ -406,7 +448,7 @@ See [skills/veo/SKILL.md](skills/veo/SKILL.md) for full documentation and option
 ```bash
 # Node.js >= 18 (Remotion bundles its own ffmpeg)
 node -v
-# Sibling media skills + API access (GEMINI_API_KEY or Vertex AI; veo needs Vertex AI)
+# Sibling media skills + API access (GEMINI_API_KEY or Vertex AI; the veo fallback needs Vertex AI)
 export GEMINI_API_KEY="your-api-key"
 ```
 
@@ -416,7 +458,7 @@ export GEMINI_API_KEY="your-api-key"
 "Make a vertical social clip from these three points"
 ```
 
-The skill first checks that the sibling skills (nanobanana / veo / lyria / gemini-tts) are installed (and prompts to install any that are missing), then returns a scene-by-scene composition plan for your approval. After approval it generates the assets, composes them in a scaffolded Remotion project, runs a multimodal self-review loop, and delivers the finished `.mp4`.
+The skill first checks that the sibling skills (nanobanana / gemini-omni or veo / lyria / gemini-tts) are installed (and prompts to install any that are missing), then returns a scene-by-scene composition plan for your approval. After approval it generates the assets, composes them in a scaffolded Remotion project, runs a multimodal self-review loop, and delivers the finished `.mp4`.
 
 ```bash
 # Check sibling skill availability

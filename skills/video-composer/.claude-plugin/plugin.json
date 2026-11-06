@@ -1,7 +1,7 @@
 {
   "name": "video-composer",
-  "version": "1.0.0",
-  "description": "Produce rich, finished video content with React Remotion by orchestrating the repository's media skills (nanobanana images, veo video, lyria BGM, gemini-tts narration) on a data-driven timeline. Approval-gated: returns a composition plan for approval, generates assets, composes, runs a multimodal self-review loop, and delivers only when the result meets the bar.",
+  "version": "1.1.0",
+  "description": "Produce rich, finished video content with React Remotion by orchestrating the repository's media skills (nanobanana images, gemini-omni video with veo as fallback, lyria BGM, gemini-tts narration) on a data-driven timeline. Approval-gated: returns a composition plan for approval, generates assets, composes, runs a multimodal self-review loop, and delivers only when the result meets the bar.",
   "author": {
     "name": "danishi"
   },

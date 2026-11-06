@@ -14,7 +14,7 @@ is described entirely by `props.json` — you normally never edit the `.tsx`.
 ├── props.sample.json       sample timeline (copy to props.json)
 ├── public/                 assets resolved via staticFile()
 │   ├── images/             nanobanana output
-│   ├── video/              veo output
+│   ├── video/              gemini-omni (or veo) output
 │   └── audio/              lyria BGM + gemini-tts voiceovers
 └── src/
     ├── index.ts            registerRoot
@@ -57,8 +57,10 @@ is described entirely by `props.json` — you normally never edit the `.tsx`.
       "media": {
         "type": "image" | "video",
         "src": "images/scene1.png",       // relative to public/
-        "fit": "cover" | "contain"        // default cover
-      },
+        "fit": "cover" | "contain",       // default cover
+        "trimStartFrames": 30             // video only: skip the first N frames
+      },                                  //   (e.g. the source-image flash of an
+                                          //   image-to-video clip); default 0
       "kenBurns": true,                   // slow zoom/drift (images)
       "captions": [
         {
