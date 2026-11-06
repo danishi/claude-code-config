@@ -1,0 +1,27 @@
+{
+  "name": "gemini-omni",
+  "version": "1.0.0",
+  "description": "Generate, edit, and extend videos with audio using Google Gemini Omni Flash (gemini-omni-1.1-flash) via the Interactions API. Text-to-video, image-to-video, first/last frame interpolation, subject reference, uploaded-video editing, extension, and multi-turn conversational editing. 16:9 / 9:16, 360p-4k. Works with Gemini Developer API and Vertex AI.",
+  "author": {
+    "name": "danishi"
+  },
+  "homepage": "https://github.com/danishi/claude-code-config/tree/main/skills/gemini-omni",
+  "repository": "https://github.com/danishi/claude-code-config",
+  "license": "MIT",
+  "keywords": [
+    "gemini omni",
+    "omni flash",
+    "generate video",
+    "edit video",
+    "extend video",
+    "text to video",
+    "image to video",
+    "video with audio"
+  ],
+  "skills": [
+    "."
+  ],
+  "commands": [
+    "./scripts/"
+  ]
+}

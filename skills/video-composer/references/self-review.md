@@ -40,11 +40,17 @@ python scripts/render_video.py --project <dir> --props <dir>/props.json \
 ### Audio (reason from props + a scrub if needed)
 - [ ] **Narration fits** — voiceover finishes within its scene (+ small tail).
 - [ ] **BGM balance** — music volume low enough (~0.2) under narration.
-- [ ] **No clashing BGM** — veo clips carry no embedded background music that
-      fights the global lyria BGM. Scrub any video scene: SE/ambience/dialogue is
-      fine, but if you hear a second musical bed, regenerate that clip with music
-      suppressed (`--negative-prompt "background music, soundtrack, …"`) — do NOT
-      mute the clip, which would also remove its SE.
+- [ ] **No clashing BGM** — video clips (gemini-omni / veo) carry no embedded
+      background music that fights the global lyria BGM. Scrub any video scene:
+      SE/ambience/dialogue is fine, but if you hear a second musical bed, fix that
+      clip — gemini-omni: a short multi-turn edit
+      (`--previous clip.mp4 "Remove the background music. Keep everything else the same."`)
+      or regenerate with `No background music, no soundtrack.` in the prompt;
+      veo: regenerate with `--negative-prompt "background music, soundtrack, …"`.
+      Do NOT mute the clip, which would also remove its SE.
+- [ ] **No unwanted cuts / leftover frames** — a gemini-omni clip meant to be one
+      take has no scene cuts, and an image-to-video clip doesn't flash the source
+      image at the start (raise `media.trimStartFrames` if it does).
 - [ ] **Sync** — captions appear while the matching narration plays.
 
 ### Requirements

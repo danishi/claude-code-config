@@ -7,7 +7,12 @@ video-composer orchestrates these skills:
     nanobanana   - AI image generation
     lyria        - AI music (BGM) generation
     gemini-tts   - text-to-speech narration
-    veo          - AI video generation
+    gemini-omni  - AI video generation / editing (primary video skill)
+    veo          - AI video generation (fallback when gemini-omni is missing)
+
+The video layer is satisfied when either gemini-omni or veo is installed;
+gemini-omni is preferred, so its absence is reported as a recommendation even
+when veo is present.
 
 When this skill is installed standalone (e.g. by another user via
 `npx skills add ...`), the sibling skills may not be present. This script
@@ -18,7 +23,7 @@ Usage:
     python check_skills.py            # human-readable report
     python check_skills.py --json     # machine-readable JSON
 
-Exit code is 0 if all skills are found, 1 if any are missing.
+Exit code is 0 if every asset layer has at least one skill, 1 otherwise.
 """
 
 import argparse
@@ -34,7 +39,17 @@ SIBLING_SKILLS = {
     "nanobanana": "images (text-to-image, editing)",
     "lyria": "music / BGM",
     "gemini-tts": "narration (text-to-speech)",
-    "veo": "video clips (text/image-to-video)",
+    "gemini-omni": "video clips (generate / edit / extend) - primary",
+    "veo": "video clips (text/image-to-video) - fallback",
+}
+
+# Asset layers -> skills that can fill them, preferred first. A layer is
+# covered when any of its skills is installed.
+LAYERS = {
+    "images": ["nanobanana"],
+    "video": ["gemini-omni", "veo"],
+    "bgm": ["lyria"],
+    "narration": ["gemini-tts"],
 }
 
 # Each skill is considered "found" when a directory containing SKILL.md exists.
@@ -120,10 +135,25 @@ def main() -> None:
             "install": None if path else install_commands(name),
         }
 
-    missing = [n for n, r in results.items() if not r["found"]]
+    # Layers with no installed skill, reported by their preferred skill name.
+    missing = [
+        skills[0]
+        for skills in LAYERS.values()
+        if not any(results[n]["found"] for n in skills)
+    ]
+    # Preferred skills that are absent although a fallback covers the layer.
+    recommended = [
+        skills[0]
+        for skills in LAYERS.values()
+        if not results[skills[0]]["found"]
+        and any(results[n]["found"] for n in skills[1:])
+    ]
 
     if args.as_json:
-        print(json.dumps({"results": results, "missing": missing}, ensure_ascii=False, indent=2))
+        print(json.dumps(
+            {"results": results, "missing": missing, "recommended": recommended},
+            ensure_ascii=False, indent=2,
+        ))
         sys.exit(0 if not missing else 1)
 
     print("Sibling media-generation skills for video-composer:\n")
@@ -133,15 +163,27 @@ def main() -> None:
         print(f"  [{status}] {name:12} - {r['role']}")
         print(f"           {loc}")
 
-    if missing:
-        print("\nSome skills are not installed. To add them, either:\n")
+    if not results["gemini-omni"]["found"] and results["veo"]["found"]:
+        print(
+            "\nVideo clips will fall back to veo (Vertex AI only). Installing "
+            "gemini-omni is recommended: it also edits / extends clips and works "
+            "with GEMINI_API_KEY."
+        )
+    elif results["gemini-omni"]["found"] and not results["veo"]["found"]:
+        print("\nveo is not installed; that's fine - gemini-omni covers the video layer.")
+
+    to_install = missing + recommended
+    if to_install:
+        print("\nTo add the missing / recommended skills, either:\n")
         print(f"  # 1) Add the marketplace once, then install plugins:")
         print(f"  claude marketplace add https://github.com/{REPO}")
-        for name in missing:
+        for name in to_install:
             print(f"  claude plugin install {name}")
         print(f"\n  # 2) Or install individual skills directly:")
-        for name in missing:
+        for name in to_install:
             print(f"  npx skills add {REPO} --skill {name}")
+
+    if missing:
         print(
             "\nIf you prefer not to install them, video-composer can fall back to "
             "alternatives (e.g. solid-color / gradient backgrounds, silent or "
@@ -149,7 +191,7 @@ def main() -> None:
         )
         sys.exit(1)
 
-    print("\nAll sibling skills are available.")
+    print("\nEvery asset layer has an available skill.")
     sys.exit(0)
 
 

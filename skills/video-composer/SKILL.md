@@ -2,8 +2,9 @@
 name: video-composer
 description: >
   Produce rich, finished video content with React Remotion by orchestrating the
-  repository's media-generation skills (nanobanana for images, veo for video
-  clips, lyria for BGM, gemini-tts for narration) and composing them on a
+  repository's media-generation skills (nanobanana for images, gemini-omni for
+  video clips with veo as a fallback, lyria for BGM, gemini-tts for narration)
+  and composing them on a
   data-driven Remotion timeline. Follows an approval-gated workflow: first
   return a video composition plan for the user to approve, then generate assets,
   compose, run a multimodal self-review loop, and deliver only when the result
@@ -14,18 +15,25 @@ description: >
 
 # Video Composer — orchestrated rich video production
 
-This skill turns a request into a finished `.mp4` by combining four media
-skills on a **Remotion** (React) timeline:
+This skill turns a request into a finished `.mp4` by combining the media
+skills below on a **Remotion** (React) timeline:
 
 | Layer | Skill |
 |---|---|
 | Images / backgrounds | [nanobanana](https://github.com/danishi/claude-code-config/tree/main/skills/nanobanana) |
-| Video clips | [veo](https://github.com/danishi/claude-code-config/tree/main/skills/veo) |
+| Video clips | [gemini-omni](https://github.com/danishi/claude-code-config/tree/main/skills/gemini-omni) (primary) / [veo](https://github.com/danishi/claude-code-config/tree/main/skills/veo) (fallback) |
 | Background music | [lyria](https://github.com/danishi/claude-code-config/tree/main/skills/lyria) |
 | Narration / voiceover | [gemini-tts](https://github.com/danishi/claude-code-config/tree/main/skills/gemini-tts) |
 
 It is an **orchestrator**: it does not generate media itself, it directs the
 skills above and assembles their output.
+
+**Video layer: gemini-omni first, veo as fallback.** Gemini Omni Flash covers
+everything veo does (text-to-video, image-to-video, first/last frame) and adds
+subject-reference images, editing and extending clips, multi-turn refinement,
+and access through `GEMINI_API_KEY`. Use veo only when gemini-omni is not
+installed / not available on the user's account, or when the user explicitly
+asks for Veo (e.g. they need `--seed`, `-n` variations, or an exact 4-8s clip).
 
 ---
 
@@ -49,8 +57,8 @@ python scripts/check_skills.py
 
 Also confirm tooling: **Node.js ≥ 18** (`node -v`) and `npx`. Remotion bundles
 its own ffmpeg, so ffmpeg is not required. API access for the media skills needs
-`GEMINI_API_KEY` (or Vertex AI); **veo requires Vertex AI** (`GOOGLE_CLOUD_PROJECT`).
-See `references/asset-pipeline.md`.
+`GEMINI_API_KEY` (or Vertex AI). gemini-omni works with either; the veo fallback
+**requires Vertex AI** (`GOOGLE_CLOUD_PROJECT`). See `references/asset-pipeline.md`.
 
 ### Step 1 — Gather requirements
 
@@ -72,7 +80,8 @@ generate anything or render until the user approves.** The plan must include:
 - A **scene-by-scene table**: # · duration · visual (image/video + prompt
   summary) · narration text · on-screen caption · transition
 - BGM mood and any logo/branding
-- Which assets are **generated** (and by which skill) vs **fallback/user-supplied**
+- Which assets are **generated** (and by which skill — gemini-omni or veo for
+  video) vs **fallback/user-supplied**
 
 Iterate on the plan with the user until they explicitly approve. Only then
 proceed.
@@ -93,13 +102,23 @@ Following the approved plan, call each sibling skill and place output under
 `<project-dir>/public/{images,video,audio}/`. Exact commands and timing tips are
 in `references/asset-pipeline.md`. Keep a consistent visual style across images.
 
-> **BGM lives only in the lyria layer.** Veo clips keep their native audio (SE,
-> ambience, dialogue) playing on the timeline, so when generating veo clips you
-> must **always suppress embedded music** — pass
-> `--negative-prompt "background music, soundtrack, musical score, BGM"` and
-> never ask for music in the prompt. Otherwise a clip's own BGM would clash with
-> the global lyria BGM. SE/ambience are kept; only music is suppressed. Details:
-> `references/asset-pipeline.md` → "Never let veo clips carry their own BGM".
+> **BGM lives only in the lyria layer.** Video clips (gemini-omni or veo) keep
+> their native audio (SE, ambience, dialogue) playing on the timeline, so you
+> must **always suppress embedded music** when generating them. Otherwise a
+> clip's own BGM would clash with the global lyria BGM. SE/ambience are kept;
+> only music is suppressed.
+> - **gemini-omni** has no negative-prompt parameter: end the prompt with
+>   `Sound design: <diegetic sounds only>. No background music, no soundtrack, no musical score.`
+> - **veo** (fallback): pass
+>   `--negative-prompt "background music, soundtrack, musical score, BGM"`.
+>
+> Never ask for music in a clip prompt. Details: `references/asset-pipeline.md`
+> → "Never let video clips carry their own BGM".
+>
+> **gemini-omni clips are ~10s and multi-shot by default.** Ask for
+> `Continuous single shot, no scene cuts.` when a scene needs one take, and
+> size the scene on the timeline (the clip is simply cut at the scene end; use
+> `media.trimStartFrames` to skip the first frames of an image-to-video clip).
 
 ### Step 5 — Author the timeline (props.json)
 
@@ -156,7 +175,8 @@ suggested next steps.
   "scenes": [
     {
       "durationInFrames": 150,
-      "media": { "type": "image" | "video", "src": "images/x.png", "fit": "cover" },
+      "media": { "type": "image" | "video", "src": "images/x.png", "fit": "cover",
+                 "trimStartFrames": 0 },   // video only: skip N frames of the clip
       "kenBurns": true,
       "captions": [ { "text": "…", "fromFrame": 0, "toFrame": 140, "position": "bottom" } ],
       "voiceover": { "src": "audio/vo1.wav", "volume": 1.0, "delayInFrames": 6 },
@@ -181,6 +201,8 @@ suggested next steps.
 - **Prefer this repo's skills**; when one is missing, prompt installation or use
   a documented fallback — and make the trade-off visible in the plan.
 - **Fix cheap before expensive** — edit props before regenerating assets.
-- **One BGM bed only** — music belongs to the lyria layer; always generate veo
-  clips with music suppressed (negative prompt) so clip-embedded BGM can't clash
-  with the global BGM. Keep the clips' SE/ambience.
+- **One BGM bed only** — music belongs to the lyria layer; always generate video
+  clips with music suppressed (in the prompt for gemini-omni, via
+  `--negative-prompt` for veo) so clip-embedded BGM can't clash with the global
+  BGM. Keep the clips' SE/ambience.
+- **gemini-omni before veo** — use veo only as the fallback described above.

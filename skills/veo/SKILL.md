@@ -29,6 +29,8 @@ Use the Python script in `scripts/` to generate videos via Google Veo 3.1 on Ver
 > `veo-3.1-*-generate-preview` models were shut down on 2026-10-22, and the
 > Gemini Developer API (`GEMINI_API_KEY`) no longer serves any Veo model. If
 > only `GEMINI_API_KEY` is set, the script exits with migration guidance.
+> To generate video with `GEMINI_API_KEY`, use the
+> [gemini-omni](../gemini-omni/SKILL.md) skill (Gemini Omni Flash) instead.
 
 ## Prerequisites
 
@@ -211,7 +213,7 @@ See `references/prompts.md` for category-specific templates.
 |---|---|
 | `google-genai package not installed` | Run `pip install google-genai` |
 | `No API credentials found` | Set `GOOGLE_CLOUD_PROJECT` and run `gcloud auth application-default login` |
-| `Veo is no longer available on the Gemini Developer API` | Only `GEMINI_API_KEY` is set. Switch to Vertex AI (`GOOGLE_CLOUD_PROJECT`) |
+| `Veo is no longer available on the Gemini Developer API` | Only `GEMINI_API_KEY` is set. Switch to Vertex AI (`GOOGLE_CLOUD_PROJECT`), or use the gemini-omni skill |
 | `only the premium Veo 3.1 model supports 4k` | Use `--pro` for 4k, or pick 720p/1080p |
 | `404` / model not found | Check `GOOGLE_CLOUD_LOCATION` is `us-central1` and the model ID in `VEO_MODEL` |
 | `No videos were generated` | Rephrase the prompt; it may have been blocked |

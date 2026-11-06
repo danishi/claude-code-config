@@ -148,7 +148,9 @@ def create_client(no_ssl_verify: bool = False) -> genai.Client:
             "The veo-3.1-*-generate-preview models were shut down on 2026-10-22.\n"
             "Use Vertex AI instead:\n"
             "  export GOOGLE_CLOUD_PROJECT=\"your-project-id\"\n"
-            "  gcloud auth application-default login\n",
+            "  gcloud auth application-default login\n"
+            "Or, to keep using GEMINI_API_KEY, use the gemini-omni skill\n"
+            "(Gemini Omni Flash), which covers text/image-to-video and more.\n",
             file=sys.stderr,
         )
         sys.exit(1)
