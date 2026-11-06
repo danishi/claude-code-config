@@ -14,9 +14,6 @@ Personal repository for managing Claude Code settings, plugins, and development 
 │   └── statusline-fable-usage.sh  # Status line helper (Fable weekly usage)
 ├── .claude-plugin/
 │   └── marketplace.json       # Plugin marketplace definition
-├── .github/workflows/         # GitHub Actions
-│   ├── claude.yml             # @claude mention handler
-│   └── claude-code-review.yml # Automated PR review
 ├── .mcp.json                  # MCP server configurations
 ├── plugins/
 │   ├── danishi/               # Base toolkit plugin
@@ -159,20 +156,6 @@ Pre-configured MCP (Model Context Protocol) servers:
 | [context7](https://context7.com/) | Up-to-date library documentation lookup |
 | [drawio](https://www.npmjs.com/package/@drawio/mcp) | Diagram creation and editing (draw.io) |
 | [backlog](https://www.npmjs.com/package/backlog-mcp-server) | Backlog project management integration |
-
-## GitHub Actions
-
-### `@claude` Mention Handler (`claude.yml`)
-
-Triggers Claude Code when `@claude` is mentioned in:
-- Issue comments
-- PR review comments
-- PR reviews
-- New issues
-
-### Automated PR Review (`claude-code-review.yml`)
-
-Automatically runs code review on every pull request using the official `code-review` plugin.
 
 ## Installation
 
@@ -480,7 +463,6 @@ This repository also serves as a personal reference for Claude Code configuratio
 ## Related Resources
 
 - [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
-- [Claude Code Action](https://github.com/anthropics/claude-code-action)
 - [Agent Plugins for AWS](https://github.com/awslabs/agent-plugins/tree/main)
 - [Agent Skills for Google products and technologies](https://github.com/google/skills)
 - [Databricks AI Dev Kit Skills](https://github.com/databricks-solutions/ai-dev-kit/tree/main/databricks-skills)
