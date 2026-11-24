@@ -98,7 +98,8 @@ bash scripts/make_live_photo.sh -i src.mp4 -n PurpleFire -s 1.4 -d 2.5 -k 1.0
 
 iOS は壁紙モーションの条件を公開していない。実機で切り分けて分かったことは次のとおり。
 
-- 決め手は `live-photo-info` トラックの設定データ。映像サイズを書いた `dims` が無いと「モーションエフェクトは使用できません」になる
+- 決め手は `live-photo-info` トラック。設定データに映像サイズを書いた `dims` が無いと「モーションエフェクトは使用できません」になる
+- `live-photo-info` のフレームごとの値も見られている。全部ゼロ（先頭の版番号だけ入れたものも含む）だと動かないので、動作を確認した値を全フレームに入れている（出どころとライセンスは `THIRD_PARTY_NOTICES.md`）
 - ほかの部分（`still-image-time` の値 -1、`live-photo-still-image-transform`、動画トラックへの `cdsc` / `cdep` 参照）は、カメラで撮った Live Photo と同じ形にそろえている
 - HEVC・60fps 固定・表紙をキー写真のフレームから作る、は動作を確認した構成に合わせたもの。どれが必須かまでは確かめていない
 

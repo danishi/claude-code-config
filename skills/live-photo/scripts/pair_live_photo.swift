@@ -16,7 +16,8 @@ import VideoToolbox
 // What iOS checks (found by testing on an iPhone, not documented by Apple):
 //   - HEIC cover and MOV share one content identifier (MakerApple key 17 / content.identifier)
 //   - HEVC video at a constant 60 fps; the cover is the decoded frame at the still time
-//   - a live-photo-info timed metadata track whose setup data carries a 'dims' box,
+//   - a live-photo-info timed metadata track whose setup data carries a 'dims' box and whose
+//     samples hold camera-like data (all zeros, or zeros with only a version byte, are refused),
 //     linked to the video track with cdsc/cdep references
 //   - a still-image-time track (value -1) with a live-photo-still-image-transform
 
@@ -240,8 +241,18 @@ func metadataSample(_ bytes: Data, _ fd: CMFormatDescription, _ t: CMTime, _ d: 
     return sb!
 }
 let frameDur = CMTime(value: tick, timescale: 600)
-// One live-photo-info sample per frame. The camera stores motion data here; zeros are accepted.
-let infoPayload = boxed(1, Data(count: 136))
+// One live-photo-info sample per frame. The camera stores per-frame motion data here.
+// iOS refuses wallpaper motion when this payload is zeros (even with the version byte set), so every frame repeats a known-good
+// sample taken from pudding0503/live-photo-batch (MIT License, see THIRD_PARTY_NOTICES.md).
+let livePhotoInfoPayloadHex =
+    "03000000bdc36d3ce3b5eb6d800000007b80ad425a2d64410a08cb3e7feea6bd79e9" +
+    "f63f000080400400ff00000000000000000000000000000000000000000007000000" +
+    "525e873ee66e52bf1b2a6ac4d37862bf761ed23dde3f8ec313f52f39b2f04439ff30" +
+    "9dbf1a17f1ed1b070000206796ed1b07000000000000000000000000000000000000"
+let infoPayload = boxed(1, Data(stride(from: 0, to: livePhotoInfoPayloadHex.count, by: 2).map {
+    let i = livePhotoInfoPayloadHex.index(livePhotoInfoPayloadHex.startIndex, offsetBy: $0)
+    return UInt8(livePhotoInfoPayloadHex[i...livePhotoInfoPayloadHex.index(after: i)], radix: 16)!
+}))
 var identity = Data(); for v in [1.0, 0, 0, 0, 1, 0, 0, 0, 1] { identity += beF64(v) }
 let stillSample = metadataSample(boxed(1, Data([0xFF])) + boxed(2, identity), stillFD, stillTime, CMTime(value: 1, timescale: 600))
 
