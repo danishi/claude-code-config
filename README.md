@@ -26,13 +26,14 @@ Personal repository for managing Claude Code settings, plugins, and development 
     ├── gemini-omni/           # AI video generation & editing skill (Gemini Omni)
     ├── veo/                   # AI video generation skill (Vertex AI)
     ├── video-composer/        # Remotion video orchestration skill
+    ├── neon-tech-visuals/     # Code-only neon tech video skill (GLSL)
     ├── izakaya-search/        # Japanese restaurant search skill
     └── skill-packager/        # Skill packaging utility
 ```
 
 ## Plugins & Skills
 
-This repository provides eleven plugins via the Claude Code marketplace:
+This repository provides twelve plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -136,6 +137,17 @@ Orchestrated rich video production with React Remotion, combining the other medi
 - **Multimodal Self-Review** - Renders, extracts still frames, visually inspects them against a rubric, and iterates autonomously until the quality bar is met
 - **Graceful Degradation** - Detects missing sibling skills and prompts installation (for standalone installs) or falls back to documented alternatives
 
+### neon-tech-visuals Skill
+
+Abstract neon tech videos made entirely from code (no generative image/video AI):
+
+- **GLSL Ray Marching** - Glossy dark structures covered in glowing circuit patterns, with reflections, fog, and light spill
+- **Bundled Scenes** - `tunnel`, `city`, and `core`; new subjects can be added as a short scene file
+- **Lens & Finish** - Camera-driven motion blur, fisheye, chromatic aberration, mip-based bloom, ACES tone mapping
+- **Original Soundtrack** - BPM-synced electronic track synthesized with numpy from the seed (`drive` / `ambient`)
+- **Config-driven** - Palettes, speed, warp, density, aspect ratio (16:9 / 9:16 / 1:1), and quality presets (`standard` / `high` / `max`)
+- **Preview Loop** - Half-resolution contact sheet, resumable time-boxed rendering, and brightness / loudness checks on the final MP4
+
 ### izakaya-search Skill
 
 Search and recommend izakaya and restaurants for group dining:
@@ -210,6 +222,7 @@ claude plugin install gemini-tts
 claude plugin install gemini-omni
 claude plugin install veo
 claude plugin install video-composer
+claude plugin install neon-tech-visuals
 claude plugin install izakaya-search
 claude plugin install skill-packager
 ```
@@ -226,6 +239,7 @@ npx skills add danishi/claude-code-config --skill gemini-tts
 npx skills add danishi/claude-code-config --skill gemini-omni
 npx skills add danishi/claude-code-config --skill veo
 npx skills add danishi/claude-code-config --skill video-composer
+npx skills add danishi/claude-code-config --skill neon-tech-visuals
 npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
 npx skills add danishi/claude-code-config --skill skill-packager
@@ -466,6 +480,31 @@ python3 <skill_dir>/scripts/check_skills.py
 ```
 
 See [skills/video-composer/SKILL.md](skills/video-composer/SKILL.md) for full documentation and the workflow.
+
+### neon-tech-visuals Skill
+
+**Prerequisites:**
+```bash
+# Node.js + Playwright (Chromium renders the shaders; uses the GPU if available, SwiftShader otherwise)
+npm i playwright
+# Python with numpy / scipy, and ffmpeg
+pip install numpy scipy
+```
+
+**Trigger with natural language:**
+```
+"Make a neon cyber tunnel video for an event opening"
+"Create a looping tech background video for an LT, magenta palette"
+```
+
+**Or drive the scripts directly with a `config.json`:**
+```bash
+python3 <skill_dir>/scripts/build.py preview config.json work   # 6-frame contact sheet
+python3 <skill_dir>/scripts/build.py render  config.json work   # repeat until all frames are done
+python3 <skill_dir>/scripts/build.py finish  config.json work out.mp4
+```
+
+See [skills/neon-tech-visuals/SKILL.md](skills/neon-tech-visuals/SKILL.md) for full documentation and options.
 
 ### izakaya-search Skill
 
