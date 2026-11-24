@@ -1,0 +1,27 @@
+{
+  "name": "neon-tech-visuals",
+  "version": "1.0.0",
+  "description": "Create ray-traced-style abstract neon tech videos purely from code: GLSL ray marching with glossy reflections, camera-driven motion blur, fisheye lens, chromatic aberration, bloom, and an original BPM-synced electronic soundtrack synthesized with numpy, rendered to MP4. Ships tunnel / circuit city / data core scenes and supports custom scenes. No generative image or video AI.",
+  "author": {
+    "name": "danishi"
+  },
+  "homepage": "https://github.com/danishi/claude-code-config/tree/main/skills/neon-tech-visuals",
+  "repository": "https://github.com/danishi/claude-code-config",
+  "license": "MIT",
+  "keywords": [
+    "neon",
+    "cyber",
+    "vj",
+    "motion graphics",
+    "glsl",
+    "shader",
+    "ray marching",
+    "background video"
+  ],
+  "skills": [
+    "."
+  ],
+  "commands": [
+    "./scripts/"
+  ]
+}
