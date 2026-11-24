@@ -27,13 +27,14 @@ Personal repository for managing Claude Code settings, plugins, and development 
     ├── veo/                   # AI video generation skill (Vertex AI)
     ├── video-composer/        # Remotion video orchestration skill
     ├── neon-tech-visuals/     # Code-only neon tech video skill (GLSL)
+    ├── live-photo/            # iPhone Live Photo maker (macOS)
     ├── izakaya-search/        # Japanese restaurant search skill
     └── skill-packager/        # Skill packaging utility
 ```
 
 ## Plugins & Skills
 
-This repository provides twelve plugins via the Claude Code marketplace:
+This repository provides thirteen plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -148,6 +149,16 @@ Abstract neon tech videos made entirely from code (no generative image/video AI)
 - **Config-driven** - Palettes, speed, warp, density, aspect ratio (16:9 / 9:16 / 1:1), and quality presets (`standard` / `high` / `max`)
 - **Preview Loop** - Half-resolution contact sheet, resumable time-boxed rendering, and brightness / loudness checks on the final MP4
 
+### live-photo Skill
+
+Turn a video into an iPhone Live Photo for a moving lock screen wallpaper (macOS):
+
+- **Video to Live Photo** - Trims a clip, extracts the key photo, and writes a JPG + MOV pair that iOS recognizes as one Live Photo
+- **No Extra Packages** - Pairs the files with macOS AVFoundation / ImageIO through a small Swift script (shared content identifier and still-image-time metadata)
+- **Lock Screen Ready** - `--portrait` center-crops to 1080x1920; key photo time and clip range are configurable
+- **Create from a Subject** - Optionally generates a photoreal still with nanobanana and animates it with gemini-omni
+- **Delivery Guide** - Verification commands and AirDrop / lock screen setup steps
+
 ### izakaya-search Skill
 
 Search and recommend izakaya and restaurants for group dining:
@@ -223,6 +234,7 @@ claude plugin install gemini-omni
 claude plugin install veo
 claude plugin install video-composer
 claude plugin install neon-tech-visuals
+claude plugin install live-photo
 claude plugin install izakaya-search
 claude plugin install skill-packager
 ```
@@ -240,6 +252,7 @@ npx skills add danishi/claude-code-config --skill gemini-omni
 npx skills add danishi/claude-code-config --skill veo
 npx skills add danishi/claude-code-config --skill video-composer
 npx skills add danishi/claude-code-config --skill neon-tech-visuals
+npx skills add danishi/claude-code-config --skill live-photo
 npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
 npx skills add danishi/claude-code-config --skill skill-packager
@@ -505,6 +518,30 @@ python3 <skill_dir>/scripts/build.py finish  config.json work out.mp4
 ```
 
 See [skills/neon-tech-visuals/SKILL.md](skills/neon-tech-visuals/SKILL.md) for full documentation and options.
+
+### live-photo Skill
+
+**Prerequisites:**
+```bash
+# macOS with ffmpeg and the Swift toolchain
+brew install ffmpeg
+xcode-select --install
+```
+
+**Trigger with natural language:**
+```
+"Turn this video into a Live Photo"
+"Make a moving lock screen wallpaper of a campfire"
+```
+
+**Or run the script directly:**
+```bash
+bash <skill_dir>/scripts/make_live_photo.sh -i src.mp4 -n Campfire -s 2.0 -d 3 -k 2.5 --portrait
+```
+
+AirDrop the resulting `IMG_<name>.JPG` and `IMG_<name>.MOV` to the iPhone together so Photos saves them as a single Live Photo.
+
+See [skills/live-photo/SKILL.md](skills/live-photo/SKILL.md) for full documentation and options.
 
 ### izakaya-search Skill
 

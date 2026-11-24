@@ -1,0 +1,26 @@
+{
+  "name": "live-photo",
+  "version": "1.0.0",
+  "description": "Turn any video into an iPhone Live Photo (paired JPG + MOV with a shared content identifier) on a Mac, usable as a moving lock screen wallpaper. Uses ffmpeg plus macOS AVFoundation / ImageIO via a Swift script. Can also create the source from a subject by chaining nanobanana (still image) and gemini-omni (image-to-video).",
+  "author": {
+    "name": "danishi"
+  },
+  "homepage": "https://github.com/danishi/claude-code-config/tree/main/skills/live-photo",
+  "repository": "https://github.com/danishi/claude-code-config",
+  "license": "MIT",
+  "keywords": [
+    "live photo",
+    "iphone",
+    "lock screen",
+    "wallpaper",
+    "video to live photo",
+    "macos",
+    "avfoundation"
+  ],
+  "skills": [
+    "."
+  ],
+  "commands": [
+    "./scripts/"
+  ]
+}
