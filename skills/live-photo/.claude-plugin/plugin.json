@@ -1,7 +1,7 @@
 {
   "name": "live-photo",
   "version": "1.0.0",
-  "description": "Turn any video into an iPhone Live Photo (paired JPG + MOV with a shared content identifier) on a Mac, usable as a moving lock screen wallpaper. Uses ffmpeg plus macOS AVFoundation / ImageIO via a Swift script. Can also create the source from a subject by chaining nanobanana (still image) and gemini-omni (image-to-video).",
+  "description": "Turn any video into an iPhone Live Photo (paired HEIC + MOV) on a Mac that iOS accepts as a moving lock screen wallpaper. Uses ffmpeg plus macOS AVFoundation / VideoToolbox / ImageIO via a Swift script (60 fps HEVC with frame interpolation and the Live Photo metadata tracks iOS checks). Can also create the source from a subject by chaining nanobanana (still image) and gemini-omni (image-to-video).",
   "author": {
     "name": "danishi"
   },

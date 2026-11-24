@@ -153,8 +153,9 @@ Abstract neon tech videos made entirely from code (no generative image/video AI)
 
 Turn a video into an iPhone Live Photo for a moving lock screen wallpaper (macOS):
 
-- **Video to Live Photo** - Trims a clip, extracts the key photo, and writes a JPG + MOV pair that iOS recognizes as one Live Photo
-- **No Extra Packages** - Pairs the files with macOS AVFoundation / ImageIO through a small Swift script (shared content identifier and still-image-time metadata)
+- **Video to Live Photo** - Trims a clip and writes a HEIC + MOV pair that iOS recognizes as one Live Photo
+- **Wallpaper Motion** - Re-encodes to 60 fps HEVC (VideoToolbox frame interpolation for 24/30 fps sources) and writes the `live-photo-info` / `still-image-time` metadata tracks iOS checks before allowing lock screen motion
+- **No Extra Packages** - Everything after the ffmpeg trim runs on macOS AVFoundation / VideoToolbox / ImageIO through a small Swift script
 - **Lock Screen Ready** - `--portrait` center-crops to 1080x1920; key photo time and clip range are configurable
 - **Create from a Subject** - Optionally generates a photoreal still with nanobanana and animates it with gemini-omni
 - **Delivery Guide** - Verification commands and AirDrop / lock screen setup steps
@@ -536,10 +537,10 @@ xcode-select --install
 
 **Or run the script directly:**
 ```bash
-bash <skill_dir>/scripts/make_live_photo.sh -i src.mp4 -n Campfire -s 2.0 -d 3 -k 2.5 --portrait
+bash <skill_dir>/scripts/make_live_photo.sh -i src.mp4 -n Campfire -s 2.0 -d 2.5 -k 1.0 --portrait
 ```
 
-AirDrop the resulting `IMG_<name>.JPG` and `IMG_<name>.MOV` to the iPhone together so Photos saves them as a single Live Photo.
+AirDrop the resulting `IMG_<name>.HEIC` and `IMG_<name>.MOV` to the iPhone together so Photos saves them as a single Live Photo.
 
 See [skills/live-photo/SKILL.md](skills/live-photo/SKILL.md) for full documentation and options.
 
