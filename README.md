@@ -28,13 +28,12 @@ Personal repository for managing Claude Code settings, plugins, and development 
     ├── video-composer/        # Remotion video orchestration skill
     ├── neon-tech-visuals/     # Code-only neon tech video skill (GLSL)
     ├── live-photo/            # iPhone Live Photo maker (macOS)
-    ├── izakaya-search/        # Japanese restaurant search skill
     └── skill-packager/        # Skill packaging utility
 ```
 
 ## Plugins & Skills
 
-This repository provides thirteen plugins via the Claude Code marketplace:
+This repository provides twelve plugins via the Claude Code marketplace:
 
 ### danishi Plugin
 
@@ -160,17 +159,6 @@ Turn a video into an iPhone Live Photo for a moving lock screen wallpaper (macOS
 - **Create from a Subject** - Optionally generates a photoreal still with nanobanana and animates it with gemini-omni
 - **Delivery Guide** - Verification commands and AirDrop / lock screen setup steps
 
-### izakaya-search Skill
-
-Search and recommend izakaya and restaurants for group dining:
-
-- **Interactive Interview** - Asks about area, party size, budget, and preferences
-- **Multi-site Search** - Searches Tabelog, Hot Pepper, Gurunavi, and Google Maps in parallel
-- **Composite Ratings** - Weighted scores (Google Maps 45%, Tabelog 35%, Hot Pepper 20%)
-- **Fake Review Detection** - Detects and penalizes suspected sakura reviews on Google Maps
-- **Quick Booking** - Provides reservation links, course info, and Google Maps directions
-- **Search Reference** - Built-in query templates by occasion, cuisine, and features
-
 ### skill-packager Skill
 
 Package a skill directory into a distributable `.skill` archive:
@@ -236,7 +224,6 @@ claude plugin install veo
 claude plugin install video-composer
 claude plugin install neon-tech-visuals
 claude plugin install live-photo
-claude plugin install izakaya-search
 claude plugin install skill-packager
 ```
 
@@ -254,7 +241,6 @@ npx skills add danishi/claude-code-config --skill veo
 npx skills add danishi/claude-code-config --skill video-composer
 npx skills add danishi/claude-code-config --skill neon-tech-visuals
 npx skills add danishi/claude-code-config --skill live-photo
-npx skills add danishi/claude-code-config --skill izakaya-search
 npx skills add danishi/claude-code-config --skill pdf-editor
 npx skills add danishi/claude-code-config --skill skill-packager
 ```
@@ -544,23 +530,12 @@ AirDrop the resulting `IMG_<name>.HEIC` and `IMG_<name>.MOV` to the iPhone toget
 
 See [skills/live-photo/SKILL.md](skills/live-photo/SKILL.md) for full documentation and options.
 
-### izakaya-search Skill
-
-**Invoke the skill in Claude Code:**
-```
-/izakaya-search
-```
-
-Claude will interactively ask about area, party size, budget, and preferences, then search multiple gourmet sites and present restaurant recommendations with composite ratings and reservation links.
-
-See [skills/izakaya-search/SKILL.md](skills/izakaya-search/SKILL.md) for full documentation and options.
-
 ### skill-packager Skill
 
 **Trigger with natural language:**
 ```
 "Package the nanobanana skill into a .skill file"
-"Bundle my izakaya-search skill for distribution"
+"Bundle my live-photo skill for distribution"
 ```
 
 Claude will list the files to be included, exclude caches and OS metadata, and create `~/Desktop/<skill-name>.skill`. The resulting archive is ready to share or install via Claude Desktop.
