@@ -4,7 +4,7 @@ import Foundation
 import ImageIO
 import UniformTypeIdentifiers
 
-// usage: swift makelive.swift in.jpg in.mov out.jpg out.mov stillSeconds
+// usage: swift pair_live_photo.swift in.jpg in.mov out.jpg out.mov stillSeconds
 let a = CommandLine.arguments
 guard a.count == 6, let stillSec = Double(a[5]) else {
     print("usage: makelive in.jpg in.mov out.jpg out.mov stillSeconds"); exit(2)
